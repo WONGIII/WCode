@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ZCode</title>
+    <title>WCode</title>
     <style>
       html,
       body,
@@ -45,6 +45,8 @@
         align-items: center;
         justify-content: center;
         border-radius: 24px;
+        /* 启动壳保留深色底：白窗口里一块黑方块 + 白 W，与 build/icon.png 的反色搭配，
+           比同色系白底更容易在首屏被识别。 */
         background: linear-gradient(180deg, #000000 0%, #151718 100%);
         box-shadow:
           0 20px 25px -5px rgb(0 0 0 / 0.2),
@@ -66,7 +68,8 @@
       }
 
       .startup-logo {
-        width: 56px;
+        /* W 字形宽高比 710:435，比原 Z 更宽，按新比例放宽同时保持居中。 */
+        width: 64px;
         height: auto;
         color: #ffffff;
       }

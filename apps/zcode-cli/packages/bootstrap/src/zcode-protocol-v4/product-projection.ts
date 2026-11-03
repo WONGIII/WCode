@@ -698,6 +698,38 @@ export class ProductProjection {
     if (currentContextWindow) {
       this.contextWindowState.usedTokens = currentContextWindow.usedTokens;
     }
+    // 累计用量与上下文窗口是两个独立事实，必须在这里独立回填。
+    // 下面的窗口水位守卫会在 usedTokens 已就绪时提前 return（重启后首帧
+    // 往往已由合成事件填好水位），若把 cumulative 放在守卫之后赋值，
+    // 累计 total 就会一直停留在运行时初值 0，表现为「重启后累计总量消失」。
+    const seededCumulative = seed.cumulative;
+    const hasSeededCumulative =
+      seededCumulative !== undefined &&
+      (Number.isFinite(seededCumulative.inputTokens) ||
+        Number.isFinite(seededCumulative.outputTokens) ||
+        Number.isFinite(seededCumulative.cacheReadTokens) ||
+        Number.isFinite(seededCumulative.cacheWriteTokens));
+    if (hasSeededCumulative) {
+      // 只在当前累计值确实小于种子时回填：运行中已累加过的会话不能被旧种子覆盖回退。
+      const seedTotal =
+        (seededCumulative.inputTokens ?? 0) + (seededCumulative.outputTokens ?? 0);
+      const currentTotal = current.cumulative.inputTokens + current.cumulative.outputTokens;
+      if (seedTotal > currentTotal) {
+        this.snapshot = {
+          ...this.snapshot,
+          usage: {
+            ...current,
+            cumulative: {
+              inputTokens: seededCumulative.inputTokens ?? current.cumulative.inputTokens,
+              outputTokens: seededCumulative.outputTokens ?? current.cumulative.outputTokens,
+              cacheReadTokens: seededCumulative.cacheReadTokens ?? current.cumulative.cacheReadTokens,
+              cacheWriteTokens:
+                seededCumulative.cacheWriteTokens ?? current.cumulative.cacheWriteTokens,
+            },
+          },
+        };
+      }
+    }
     // 未知容量也有内部用量事实；迟到的恢复种子不能覆盖真实 ModelComplete/Compact 水位。
     if (this.contextWindowState.usedTokens > 0) {
       return;
@@ -707,10 +739,10 @@ export class ProductProjection {
       return;
     }
     const cumulative = {
-      inputTokens: seed.cumulative?.inputTokens ?? current.cumulative.inputTokens,
-      outputTokens: seed.cumulative?.outputTokens ?? current.cumulative.outputTokens,
-      cacheReadTokens: seed.cumulative?.cacheReadTokens ?? current.cumulative.cacheReadTokens,
-      cacheWriteTokens: seed.cumulative?.cacheWriteTokens ?? current.cumulative.cacheWriteTokens,
+      inputTokens: this.snapshot.usage.cumulative.inputTokens,
+      outputTokens: this.snapshot.usage.cumulative.outputTokens,
+      cacheReadTokens: this.snapshot.usage.cumulative.cacheReadTokens,
+      cacheWriteTokens: this.snapshot.usage.cumulative.cacheWriteTokens,
     };
     if (this.contextWindowState.touchedByEvent) {
       // 同类守卫：显式 ModelSelected.contextWindow（含 null）是日志权威容量，

@@ -207,7 +207,7 @@ export function ConversationDraftEmptyState({
       <div
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute left-1/2 top-1/2 aspect-[5/4] w-[min(72vw,25rem)] -mt-10",
+          "pointer-events-none absolute left-1/2 top-1/2 aspect-[400/250] w-[min(72vw,25rem)] -mt-10",
           "-translate-x-1/2 -translate-y-1/2 text-foreground-subtlest",
         )}
       >
@@ -256,15 +256,30 @@ function ZCodeEmptyStateLogo({ className }: { className?: string }) {
           "[mask-repeat:no-repeat] [mask-size:100%_100%]",
         )}
         width="400"
-        height="320"
-        viewBox="0 0 400 320"
+        height="250"
+        viewBox="0 0 400 250"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        <path
-          d="M398.97 0.5L147.576 319.5H1.03027L37.5996 273.081L120.167 169.603L120.171 169.598L215.342 47.5605L215.343 47.5615L252.424 0.5H398.97ZM264.544 273.271H372.527L336.082 319.498H189.886L202.642 303.307C217.584 284.34 240.398 273.271 264.544 273.271ZM209.164 0.5L202.786 8.58887C183.782 32.6885 154.782 46.752 124.091 46.752H25.9805L62.4268 0.5H209.164Z"
-          stroke="currentColor"
-        />
+        {/* 品牌字形从 Z 换成 W。W 的 bbox 是 710x435，按容器 88% 宽度等比缩放后居中。 */}
+        <g transform="translate(24 17.17) scale(0.49577) translate(-157 -294)">
+          <path
+            d="M 267.00 294.00 L 267.00 294.00 L 349.31 532.68 L 294.30 692.19 L 157.00 294.00 Z"
+            stroke="currentColor"
+          />
+          <path
+            d="M 307.00 729.00 L 307.00 729.00 L 444.30 330.81 L 499.31 490.32 L 417.00 729.00 Z"
+            stroke="currentColor"
+          />
+          <path
+            d="M 567.00 294.00 L 567.00 294.00 L 649.31 532.68 L 594.30 692.19 L 457.00 294.00 Z"
+            stroke="currentColor"
+          />
+          <path
+            d="M 607.00 729.00 L 607.00 729.00 L 757.00 294.00 L 867.00 294.00 L 717.00 729.00 Z"
+            stroke="currentColor"
+          />
+        </g>
       </svg>
       {/* 深色资源包含专用渐变与模糊效果，不能通过 currentColor 复刻；主题类保证两套 Logo 互斥显示。 */}
       <img

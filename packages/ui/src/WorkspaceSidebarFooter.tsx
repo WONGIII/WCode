@@ -1,7 +1,7 @@
 import { SidebarNativeTooltip, ControlHintTooltip } from "@/ControlHintTooltip.js";
 /* oxlint-disable eslint(max-lines) -- footer 聚合账户、主题、模式和快捷键菜单。 */
 import type { Locale, UserInfo } from "@zcode/shared";
-import { memo, useCallback, useEffect, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { DesktopCommandIds } from "@zcode/shared";
 import {
   TID_LOGIN_MENU_ITEM,
@@ -48,6 +48,7 @@ import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useShortcutCommandLabel } from "@/shortcuts/useShortcutBindings.js";
 import { useZCodeStore } from "@/store/StoreProvider.js";
 import { normalizeInterfaceMode } from "@/lib/interfaceMode.js";
+import { useCustomUserProfile } from "@/lib/customUserProfile.js";
 import type { Theme } from "@/useTheme.js";
 import { WorkspaceWebRemoteControlTrigger } from "@/WorkspaceWebRemoteControlTrigger.js";
 import {
@@ -139,9 +140,31 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   const zoomOutShortcutLabel = useShortcutCommandLabel("zoomOut");
   const resetZoomShortcutLabel = useShortcutCommandLabel("resetZoom");
   const isRestoringOAuthSession = useZCodeStore((state) => state.isRestoringOAuthSession);
-  const profileBadge = getSidebarProfileBadge(user, intl.formatMessage);
-  const avatarFallbackText = getAvatarFallbackText(user);
-  const avatarKey = user?.avatarUrl ?? user?.id ?? "guest";
+  // 本地自定义身份覆盖登录态展示：未登录时侧栏只显示「连接使用」，
+  // 用户无法区分本机多个环境。覆盖只影响展示，不改变鉴权与 user 对象本身。
+  const { profile: customProfile } = useCustomUserProfile();
+  const customDisplayName = customProfile.displayName.trim();
+  const customAvatarUrl = customProfile.avatarUrl.trim();
+  const resolvedUserForDisplay = useMemo<UserInfo | null | undefined>(() => {
+    if (!customDisplayName && !customAvatarUrl) {
+      return user;
+    }
+    return {
+      ...user,
+      ...(customDisplayName ? { displayName: customDisplayName } : {}),
+      ...(customAvatarUrl ? { avatarUrl: customAvatarUrl } : {}),
+    } as UserInfo;
+  }, [user, customDisplayName, customAvatarUrl]);
+  const profileBadge = getSidebarProfileBadge(
+    resolvedUserForDisplay,
+    intl.formatMessage,
+  );
+  const avatarFallbackText = getAvatarFallbackText(resolvedUserForDisplay);
+  const avatarKey =
+    customAvatarUrl ||
+    resolvedUserForDisplay?.avatarUrl ||
+    resolvedUserForDisplay?.id ||
+    "guest";
   const showAuthRestoreLoading = !user && isRestoringOAuthSession;
   const usageSummaryState = useWorkspaceSidebarFooterUsageSummaryState({
     enabled: true,
@@ -160,9 +183,14 @@ export const WorkspaceSidebarFooter = memo(function WorkspaceSidebarFooterCompon
   const profileContent = (
     <>
       <Avatar key={avatarKey} size="default">
-        {user?.avatarUrl ? <AvatarImage src={user.avatarUrl} alt={profileBadge} /> : null}
+        {customAvatarUrl || resolvedUserForDisplay?.avatarUrl ? (
+          <AvatarImage
+            src={customAvatarUrl || resolvedUserForDisplay?.avatarUrl}
+            alt={profileBadge}
+          />
+        ) : null}
         <AvatarFallback className="bg-background text-foreground">
-          {user ? (
+          {customDisplayName || user ? (
             avatarFallbackText
           ) : showAuthRestoreLoading ? (
             <>

@@ -12,6 +12,8 @@ export type ProviderModelInputFormatDraft = ModelInputFormatData;
 
 export interface ProviderModelDraftValues {
   idValue: string;
+  /** 自定义显示名称；空串表示沿用模型 ID。 */
+  displayNameValue?: string;
   contextWindowValue: string;
   maxOutputTokensValue: string;
   inputFormatValue: ProviderModelInputFormatDraft;
@@ -49,6 +51,8 @@ export function createProviderModelDraftValues(
   const inputFormat = properties?.inputFormat;
   return {
     idValue: model.modelId,
+    // 显示名只读个人配置里的显式值；继承值由预览位置提示，不写进输入框。
+    displayNameValue: model.personalConfig.displayName ?? "",
     // 编辑器只把 Personal Overlay 当作真实输入；继承值由 UI 作为 placeholder 展示。
     contextWindowValue:
       model.personalConfig.properties?.contextWindow == null
@@ -295,7 +299,7 @@ export function resolveProviderModelDraftCommit({
   } else {
     deleteMutable(effectiveOptionSpecs, "maxOutputTokens");
   }
-  const personalConfig = useRecommendedConfig
+  const basePersonalConfig = useRecommendedConfig
     ? sparsePersonalConfig
     : materializeEditorManagedPersonalConfig({
         current: sparsePersonalConfig,
@@ -306,6 +310,16 @@ export function resolveProviderModelDraftCommit({
           optionSpecs: effectiveOptionSpecs,
         },
       });
+  // 显示名不属于能力配置，两种模式都按草稿单独落位，避免走 materialize 时被抹掉。
+  const personalConfig = withModelDisplayName(
+    basePersonalConfig,
+    draft.displayNameValue,
+    currentModel.config.displayName,
+  );
+  const resolvedDisplayName = resolveModelDisplayNameValue(
+    draft.displayNameValue,
+    currentModel.config.displayName,
+  );
   return {
     status: "commit",
     model: {
@@ -319,9 +333,49 @@ export function resolveProviderModelDraftCommit({
         enabled: effectiveEnabled,
         properties: effectiveProperties,
         optionSpecs: effectiveOptionSpecs,
+        ...(resolvedDisplayName === undefined
+          ? {}
+          : { displayName: resolvedDisplayName }),
       },
     },
   };
+}
+
+/**
+ * 解析用户输入的显示名。
+ *
+ * 空输入表示「清除自定义」：返回 undefined，由调用方删除 config.displayName，
+ * 展示层自动回退到模型 ID。与 inheritedName 相等时也视为未自定义，
+ * 避免把「填了跟内置一样的名字」存成冗余覆盖。
+ */
+function resolveModelDisplayNameValue(
+  rawDraftValue: string | undefined,
+  inheritedName: string | null | undefined,
+): string | undefined {
+  const trimmed = rawDraftValue?.trim() ?? "";
+  if (!trimmed) {
+    return undefined;
+  }
+  return trimmed === inheritedName?.trim() ? undefined : trimmed;
+}
+
+/** 把显示名写进个人配置；未自定义时不写字段，保持 sparse。 */
+function withModelDisplayName(
+  config: ModelConfigObject,
+  rawDraftValue: string | undefined,
+  inheritedName: string | null | undefined,
+): ModelConfigObject {
+  const resolved = resolveModelDisplayNameValue(rawDraftValue, inheritedName);
+  if (resolved === undefined) {
+    if (config.displayName === undefined) {
+      return config;
+    }
+    const next: ModelConfigObject = { ...config };
+    deleteMutable(next, "displayName");
+    return next;
+  }
+
+  return { ...config, displayName: resolved };
 }
 
 function preserveEnabledPersonalConfig(config: ModelConfigObject): ModelConfigObject {

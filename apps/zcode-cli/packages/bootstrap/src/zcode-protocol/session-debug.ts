@@ -143,6 +143,9 @@ export function observeSessionDebug(record: SessionRecord, event: SessionEvent):
           : null,
       generationDurationMs,
       tokensPerSecond: calculateOutputTps(outputTokens, generationDurationMs),
+      // 首 token 延迟原本只参与 generationDurationMs 的减法就被丢弃，
+      // 前端因此无法展示 TTFT。这里额外保留原值，供工具栏 token/s 弹窗做均值统计。
+      timeToFirstContentMs: first ?? null,
     },
   ].slice(-SESSION_DEBUG_LIMITS.rounds);
 }

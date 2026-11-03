@@ -2587,6 +2587,41 @@ export type ZCodeProviderTestModelConnectivityResult = z.infer<
   typeof zcodeProviderTestModelConnectivityResultSchema
 >;
 
+/**
+ * 拉取供应商模型列表。
+ *
+ * 只传 providerId：凭证与 baseUrl 由主进程从已保存配置读取，
+ * 避免把 apiKey 经渲染进程往返。请求在服务端 adapter 内完成。
+ */
+export const zcodeProviderListModelsParamsSchema = z
+  .object({
+    providerId: nonEmptyString,
+    // 需要 workspace 才能复用/创建 app 装配（provider settings 活在 app 里）。
+    workspace: zcodeWorkspaceRefSchema,
+  })
+  .strict();
+export const zcodeProviderListModelsResultSchema = z
+  .object({
+    models: z.array(
+      z
+        .object({
+          id: nonEmptyString,
+          /** 供应商返回的可读名；缺失时前端回退显示 id。 */
+          name: nonEmptyString.optional(),
+          /** 已存在于当前配置时为 true，弹窗中展示为已勾选且不可取消。 */
+          alreadyAdded: z.boolean(),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+export type ZCodeProviderListModelsParams = z.infer<
+  typeof zcodeProviderListModelsParamsSchema
+>;
+export type ZCodeProviderListModelsResult = z.infer<
+  typeof zcodeProviderListModelsResultSchema
+>;
+
 export const zcodeProviderUpdateAccountConfigParamsSchema = z
   .object({
     revision: nonEmptyString,
@@ -4304,6 +4339,7 @@ export const zcodeProtocolMethods = {
   workspaceGenerateText: "workspace/generateText",
   workspaceCancelGenerateText: "workspace/cancelGenerateText",
   providerTestModelConnectivity: "provider/testModelConnectivity",
+  providerListModels: "provider/listModels",
   mcpList: "mcp/list",
   workspaceMcpTrust: "workspace/mcp/trust",
   mcpReadResource: "mcp/readResource",

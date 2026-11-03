@@ -117,8 +117,8 @@ interface SessionResourceCloseInput {
 interface CreateSessionFacadeDeps {
   cliDefaultSelection?: CliDefaultSelection;
   /**
-   * 停下本会话拥有的 dwf run：
-   * run service 的 `close()`。缺席即本装配没有 dwf 端口（journal 窄化失败、测试装配）。
+   * 停下本会话拥有的 dwf run�?
+   * run service �?`close()`。缺席即本装配没�?dwf 端口（journal 窄化失败、测试装配）�?
    */
   closeDynamicWorkflowRuns?: () => Promise<void>;
   closeScriptWorkflowRuns?: () => Promise<void>;
@@ -138,6 +138,7 @@ interface CreateSessionFacadeDeps {
   prepareResume(traceContext?: TraceContext): Promise<void>;
   projectID: ProjectId;
   providerRegistry: ProviderRegistryModelSource;
+  /** 进程�?provider settings 服务；仅用于「获取模型列表」这类读凭证的只读能力�?*/
   resolveUiLocale(locale: UiLocale): SupportedLocale;
   runtime: AgentRuntime;
   sessionId: SessionId;
@@ -150,7 +151,7 @@ interface CreateSessionFacadeDeps {
 export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacade {
   let closePromise: Promise<void> | undefined;
   let currentLocale = resolveLocale(deps.configResult.config.ui.locale);
-  // App-Provided Tools：本会话当前登记在 ToolRegistry 里的模型侧名字（整体替换时先注销）。
+  // App-Provided Tools：本会话当前登记�?ToolRegistry 里的模型侧名字（整体替换时先注销）�?
   let appProvidedToolNames: string[] = [];
   const currentRegistrySelection = ():
     | { owned: false }
@@ -178,8 +179,8 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
       target.activeRunStartedAtMs != null &&
       deps.sessionStore.recoverInterruptedTargetRun
     ) {
-      // 上次 app/agent 退出可能留下未清空的 active_run_started_at。
-      // 这里不能用当前时间结算，否则离线时间会被算进 goal 运行时长；store 会用 last_seen 收口。
+      // 上次 app/agent 退出可能留下未清空�?active_run_started_at�?
+      // 这里不能用当前时间结算，否则离线时间会被算进 goal 运行时长；store 会用 last_seen 收口�?
       return await deps.sessionStore.recoverInterruptedTargetRun({
         sessionID: deps.sessionId,
       });
@@ -200,9 +201,9 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
     const visibleObjective = action === "set" ? (input.objective ?? "").trim() : undefined;
     const visibleGoalQuery =
       action === "set" ? input.displayText?.trim() || visibleObjective : undefined;
-    // /goal 不走普通 prompt 提交流程，但它会先把 session 持久化。
-    // 必须在首次持久化前走统一用户执行边界，否则 runtime/bash_shell_selection
-    // 会因为当时 selection 为空而缺失，冷恢复时退回 legacy shell fallback。
+    // /goal 不走普�?prompt 提交流程，但它会先把 session 持久化�?
+    // 必须在首次持久化前走统一用户执行边界，否�?runtime/bash_shell_selection
+    // 会因为当�?selection 为空而缺失，冷恢复时退�?legacy shell fallback�?
     await deps.prepareUserExecutionBoundary({
       traceContext: deps.traceContext,
     });
@@ -238,9 +239,9 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
           traceContext: deps.traceContext,
         });
       }
-      // TUI 和协议客户端可能在重连或恢复后仍缓存旧 goal。
-      // 即使 session store 已经是空，也要把显式 clear 投影成 target:null，
-      // 让客户端不能只因为“No goal to clear.”这条文本而继续保留旧面板。
+      // TUI 和协议客户端可能在重连或恢复后仍缓存�?goal�?
+      // 即使 session store 已经是空，也要把显式 clear 投影�?target:null�?
+      // 让客户端不能只因为“No goal to clear.”这条文本而继续保留旧面板�?
       await deps.runtime.recordTargetChanged({
         action,
         previousTarget,
@@ -254,8 +255,8 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
       if (visibleObjective !== undefined) {
         // /goal 同时是控制命令和用户 query。旧路径只把解析后的 objective
         // 落库，且 live 事件里没有这条输入；因此首轮实时列表为空，冷恢复后也丢失
-        // `/goal` / `/target` / `replace` 原文。target 继续存 canonical objective，
-        // 可见消息单独保留协议层传入的原始 display text。
+        // `/goal` / `/target` / `replace` 原文。target 继续�?canonical objective�?
+        // 可见消息单独保留协议层传入的原始 display text�?
         await deps.runtime.recordExternalUserPrompt(visibleGoalQuery ?? visibleObjective, {
           goalSummaryTargetID: target.targetID,
           intent: input.intent,
@@ -291,7 +292,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
       closePromise ??= closeSessionResourceWithinDeadline(
         "session_shutdown",
         async () => {
-          // 关闭入口先阻止新调度并取消在飞 Memory Extraction，再等待取消链路收口。
+          // 关闭入口先阻止新调度并取消在�?Memory Extraction，再等待取消链路收口�?
           const errors: unknown[] = [];
           deps.runtime.beginShutdown();
           const owners: Array<[string, (() => Promise<void>) | undefined]> = [
@@ -299,7 +300,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
             ["dynamic_workflow", deps.closeDynamicWorkflowRuns],
             ["script_workflow", deps.closeScriptWorkflowRuns],
           ];
-          // deadline 只限制外部等待；真实 drain 未完成前，依赖资源必须继续由此链持有。
+          // deadline 只限制外部等待；真实 drain 未完成前，依赖资源必须继续由此链持有�?
           const closed = await Promise.allSettled(
             owners.flatMap(([, close]) => (close ? [Promise.resolve().then(close)] : [])),
           );
@@ -344,7 +345,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
         ? resolveRegistryThoughtLevel(registryState.selection)
         : readUserModelSelection(deps)?.options?.reasoningLevel;
     },
-    // 当前档位只读会话事实；缺失时不能借默认档位伪装成已完成选择。
+    // 当前档位只读会话事实；缺失时不能借默认档位伪装成已完成选择�?
     getThoughtLevel: () => readUserModelSelection(deps)?.options?.reasoningLevel,
     loadSessionTranscript: async () =>
       await loadSessionTranscriptFromStore({
@@ -501,7 +502,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
         entry,
         { signal: options?.signal, traceContext: deps.traceContext },
       );
-      // 审批期间连接可能被替换：批准只属于原连接，执行前必须再次验证。
+      // 审批期间连接可能被替换：批准只属于原连接，执行前必须再次验证�?
       options?.signal?.throwIfAborted();
       const current = deps.mcpPort.appConnectionSnapshot?.(serverName);
       if (
@@ -526,7 +527,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
       for (const name of appProvidedToolNames) registry.unregister(name);
       const registered: string[] = [];
       for (const definition of definitions) {
-        // 不覆盖内置 / MCP 工具：`app__` 前缀本不该冲突，冲突时以既有工具为准。
+        // 不覆盖内�?/ MCP 工具：`app__` 前缀本不该冲突，冲突时以既有工具为准�?
         if (registry.has(definition.modelName) || registered.includes(definition.modelName))
           continue;
         registry.register(createMcpAppProvidedToolEntry(definition, execute), {
@@ -535,13 +536,13 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
         registered.push(definition.modelName);
       }
       appProvidedToolNames = registered;
-      // 同回合下一次模型请求即可见：只是让 getTools 重建缓存；工具集合没变时发给模型的内容也不变。
+      // 同回合下一次模型请求即可见：只是让 getTools 重建缓存；工具集合没变时发给模型的内容也不变�?
       deps.runtime.invalidateToolCache();
       return registered;
     },
     getMcpToolVisibility: async (serverName, toolName) => {
       if (!deps.mcpPort) return null;
-      // 真相是 adapter 归一化过的 descriptor（同一份 tools/list），不另存副本。
+      // 真相�?adapter 归一化过�?descriptor（同一�?tools/list），不另存副本�?
       const descriptor = (await deps.mcpPort.listTools()).find(
         (tool) => tool.serverName === serverName && tool.toolName === toolName,
       );
@@ -575,7 +576,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
         traceContext: options.traceContext ?? deps.traceContext,
       }),
     generateWorkspaceText: async (input, options) => {
-      // 辅助文本入口只规范化模型身份；具体的最低档位由 Core 的辅助请求调用点显式决定。
+      // 辅助文本入口只规范化模型身份；具体的最低档位由 Core 的辅助请求调用点显式决定�?
       const selection =
         normalizeModelSelection(deps.providerRegistry.getView(), input.selection) ??
         input.selection;
@@ -588,7 +589,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
       );
     },
     testModelConnectivity: async (input, options) => {
-      // 连接测试用的 Model 也要先绑定最低档位，否则严格 Factory 会先因缺档位失败。
+      // 连接测试用的 Model 也要先绑定最低档位，否则严格 Factory 会先因缺档位失败�?
       const selection = completeAuxiliaryRegistryModelSelection(
         deps.providerRegistry,
         input.selection,
@@ -601,10 +602,11 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
         },
       );
     },
+
     setMode: async (mode: CollaborationMode) => {
       const previousMode = deps.runtime.getMode();
       const session = await deps.sessionStore.getSession(deps.sessionId);
-      // 群模式属于任务授权；不能写入工作区默认模式，让其他群或私聊继承。
+      // 群模式属于任务授权；不能写入工作区默认模式，让其他群或私聊继承�?
       if (session?.permission?.scope === "session") {
         await deps.sessionStore.updateSession({
           id: deps.sessionId,
@@ -645,8 +647,8 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
       };
     },
     setModel: async (modelId, options) => {
-      // 配置命令已提交完整 Selection；转成字符串会丢档位。先整体校验再一次
-      // 更新/保存，非法档位不能留下已换模型的半次修改。旧字符串入口保留只改身份语义。
+      // 配置命令已提交完�?Selection；转成字符串会丢档位。先整体校验再一�?
+      // 更新/保存，非法档位不能留下已换模型的半次修改。旧字符串入口保留只改身份语义�?
       const registrySelection =
         typeof modelId === "string"
           ? resolveRegistryOwnedSelection(
@@ -674,7 +676,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
       } else {
         deps.runtime.setSessionModelSelection(sessionSelection);
       }
-      // transient 切换不产出 modelChange 聊天通知：应用/还原成对出现会刷出两条无意义通知。
+      // transient 切换不产�?modelChange 聊天通知：应�?还原成对出现会刷出两条无意义通知�?
       if (!options?.transient) {
         deps.runtime.recordPendingModelChange({
           fromModel: previousSelection,
@@ -738,7 +740,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
           traceId: deps.traceContext.traceId,
         };
       }
-      throw new Error("当前 Session Model 不属于 Provider Registry");
+      throw new Error("当前 Session Model 不属�?Provider Registry");
     },
     setLocale: async (locale) => {
       const previousLocale = currentLocale;
@@ -769,7 +771,7 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
 export async function closeSessionResources(input: SessionResourceCloseInput): Promise<void> {
   const errors: unknown[] = [];
   try {
-    // 第一拍先关闭 runtime admission；后续 execution cancel 只能收口状态，不能再唤醒模型。
+    // 第一拍先关闭 runtime admission；后�?execution cancel 只能收口状态，不能再唤醒模型�?
     input.beginShutdown();
   } catch (error) {
     errors.push(error);
@@ -786,7 +788,7 @@ export async function closeSessionResources(input: SessionResourceCloseInput): P
     ["node_repl_browser_broker", input.closeNodeReplBrowserBroker],
   ];
 
-  // 独立资源并行释放；外部超时不能让仍在收尾的借用者碰到已关闭的 store。
+  // 独立资源并行释放；外部超时不能让仍在收尾的借用者碰到已关闭�?store�?
   const completion = (async () => {
     const results = await Promise.allSettled(
       resources.flatMap(([name, close]) =>
@@ -872,9 +874,9 @@ async function persistSessionModelSelection(deps: CreateSessionFacadeDeps): Prom
       type: SESSION_ENTRY_MODEL_SELECTION,
       touchSession: false,
       time: { created: timestamp, updated: timestamp },
-      // 模型与思考档位是 session-local 原子选型；切换后立即落同一稳定 entry，
-      // 不必等下一条消息，也不会在冷恢复时读取 workspace/draft 的全局最新选择。
-      // 同时配置补写不代表用户新活动，不能触发 session.time_updated 变成“刚刚”。
+      // 模型与思考档位是 session-local 原子选型；切换后立即落同一稳定 entry�?
+      // 不必等下一条消息，也不会在冷恢复时读取 workspace/draft 的全局最新选择�?
+      // 同时配置补写不代表用户新活动，不能触�?session.time_updated 变成“刚刚”�?
       data: {
         modelId: selection.modelId,
         providerId: selection.providerId,
@@ -890,11 +892,11 @@ async function persistSessionModelSelection(deps: CreateSessionFacadeDeps): Prom
       providerId: selection.providerId,
       thoughtLevel: selection.options?.reasoningLevel,
     };
-    // Bug 原因（ZCT-2109847556412547072）：App 在 deferred 会话首条消息前设置选型/档位时，
-    // session 行尚未创建，entry 写入必然报 FOREIGN KEY，却以 warn 进入生产日志，误导排查。
-    // 首次持久化（ensureSessionPersisted）会以当时的 Session Selection 补写同一 entry，
-    // 所以仅在会话仍未持久化时降为 debug。仍先尝试写入而不是预先跳过：若首次持久化正在进行，
-    // 预判跳过会漏写比其读取更晚的选择。
+    // Bug 原因（ZCT-2109847556412547072）：App �?deferred 会话首条消息前设置选型/档位时，
+    // session 行尚未创建，entry 写入必然�?FOREIGN KEY，却�?warn 进入生产日志，误导排查�?
+    // 首次持久化（ensureSessionPersisted）会以当时的 Session Selection 补写同一 entry�?
+    // 所以仅在会话仍未持久化时降�?debug。仍先尝试写入而不是预先跳过：若首次持久化正在进行�?
+    // 预判跳过会漏写比其读取更晚的选择�?
     if (!deps.runtime.isSessionPersisted()) {
       deps.logger.debug("Session model selection persistence deferred until session is persisted", {
         ...logContext,
@@ -903,7 +905,7 @@ async function persistSessionModelSelection(deps: CreateSessionFacadeDeps): Prom
       });
       return;
     }
-    // 选型已经在当前 runtime 生效；持久化失败不能反向伪装成切换失败，但必须留生产日志。
+    // 选型已经在当�?runtime 生效；持久化失败不能反向伪装成切换失败，但必须留生产日志�?
     deps.logger.warn("Session model selection persistence failed", {
       ...logContext,
       event: "session.model_selection.persist_failed",
@@ -912,7 +914,7 @@ async function persistSessionModelSelection(deps: CreateSessionFacadeDeps): Prom
   }
 }
 
-/** 仅供仍以 provider/model 字符串工作的内部 App facade；不是 ModelSelection 序列化。 */
+/** 仅供仍以 provider/model 字符串工作的内部 App facade；不�?ModelSelection 序列化�?*/
 function formatLegacyRuntimeModelValue(selection: ModelSelection | undefined): string {
   return selection ? `${selection.providerId}/${selection.modelId}` : "";
 }

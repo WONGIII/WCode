@@ -88,6 +88,7 @@ export function ProviderModelMetadataDialog({
   };
   const contextWindowInputId = useId();
   const maxOutputInputId = useId();
+  const displayNameInputId = useId();
   const smart = draft.useRecommendedConfigValue !== false;
   const activeOverrides = smart ? overrideFields : new Set<string>();
   const overridden = (field: string, legacy = false) =>
@@ -193,6 +194,32 @@ export function ProviderModelMetadataDialog({
                     onDraftChange({ idValue: event.target.value });
                   }}
                   onBlur={onModelIdBlur}
+                  onCompositionStart={handleCompositionStart}
+                  onCompositionEnd={handleCompositionEnd}
+                  onKeyDown={handleTechnicalInputKeyDown}
+                />
+              </div>
+              {/* 模型显示名称：只影响列表与工具栏展示，不改变模型 ID 和请求参数。
+                  留空则回退显示模型 ID，因此不设必填校验。 */}
+              <div className="min-w-0 flex-1">
+                <label
+                  className="mb-1 block text-ui-base text-foreground-subtle"
+                  htmlFor={displayNameInputId}
+                >
+                  {intl.formatMessage({
+                    id: "settings.modelProvider.modelDisplayName",
+                  })}
+                </label>
+                <Input
+                  id={displayNameInputId}
+                  type="text"
+                  size="lg"
+                  className={modelEditorControlStyle(false)}
+                  value={draft.displayNameValue ?? ""}
+                  placeholder={draft.idValue.trim()}
+                  onChange={(event) => {
+                    onDraftChange({ displayNameValue: event.target.value });
+                  }}
                   onCompositionStart={handleCompositionStart}
                   onCompositionEnd={handleCompositionEnd}
                   onKeyDown={handleTechnicalInputKeyDown}

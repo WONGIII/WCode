@@ -44,6 +44,7 @@ import { Button } from "@/components/ui/button.js";
 import { HighspeedModelIndicator } from "@/highspeed/HighspeedModelIndicator.js";
 import { formatHighspeedRemainingTime } from "@/highspeed/highspeedTime.js";
 import { ChatContextUsage } from "@/chat-input-toolbar/display.js";
+import { ChatTokenSpeedIndicator } from "@/chat-input-toolbar/TokenSpeedIndicator.js";
 import {
   hasChatCodingPlanUsageRemaining,
   type ChatCodingPlanUsageRemainingConfig,
@@ -1266,16 +1267,25 @@ function V4ComposerModelControlsImpl({
       />
       {/* Highspeed 卡激活即锁定模型；不能等动效交接完成才隐藏，否则 usage 圈圈会短暂闪现。 */}
       {!modelLocked ? (
-        <ChatContextUsage
-          codingPlanUsageRemaining={codingPlanUsageRemaining}
-          taskUsage={taskUsage}
-          startPlanBalance={contextStartPlanBalance}
-          selectedProvider={displayProvider}
-          intl={intl}
-          locale={locale}
-          onSendCompressionCommand={onSendCompressionCommand}
-          compressionDisabled={disabled || recoveryPending}
-        />
+        <>
+          {/* token/s 固定排在上下文窗口用量左侧；两者共用同一会话的调试快照数据源。 */}
+          <ChatTokenSpeedIndicator
+            taskId={sessionId}
+            workspaceIdentity={workspaceIdentity}
+            workspacePath={workspacePath}
+          />
+          <ChatContextUsage
+            codingPlanUsageRemaining={codingPlanUsageRemaining}
+            cumulativeUsage={usage?.cumulative ?? null}
+            taskUsage={taskUsage}
+            startPlanBalance={contextStartPlanBalance}
+            selectedProvider={displayProvider}
+            intl={intl}
+            locale={locale}
+            onSendCompressionCommand={onSendCompressionCommand}
+            compressionDisabled={disabled || recoveryPending}
+          />
+        </>
       ) : null}
       {/* 加速轮的模型由本次卡决定，选型菜单此时不可用，所以指示器优先于选型加载态。 */}
       {highspeedPresented && highspeedModel ? (

@@ -23,6 +23,10 @@ export const sessionDebugRoundSchema = z
     hitRate: count.nullable(),
     generationDurationMs: count.nullable(),
     tokensPerSecond: count.nullable(),
+    // 首 token 延迟直接来自 provider 的 timeToFirstContentMs。
+    // 之前只落 generationDurationMs（= durationMs - 首token延迟），首 token 时间被丢弃，
+    // 导致 UI 只能看到生成速度、看不到 TTFT。补回该字段后历史会话无需重建也能算均值。
+    timeToFirstContentMs: count.nullable(),
   })
   .strict();
 export const sessionDebugNetworkEntrySchema = z
@@ -80,6 +84,7 @@ export const sessionDebugSnapshotSchema = z
   })
   .strict();
 export type SessionDebugSnapshot = z.infer<typeof sessionDebugSnapshotSchema>;
+export type SessionDebugRound = z.infer<typeof sessionDebugRoundSchema>;
 export type SessionDebugNetworkEntry = z.infer<typeof sessionDebugNetworkEntrySchema>;
 
 /** 输出 token 与首输出到请求结束的同源时间；未知值不能用请求总耗时替代。 */

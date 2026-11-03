@@ -69,6 +69,7 @@ import type {
   ZCodeProviderRuntimeHeadersCancelled,
   ZCodeProviderTestModelConnectivityParams,
   ZCodeProviderTestModelConnectivityResult,
+  ZCodeProviderListModelsResult,
   ZCodeUserInputRequestParams,
   ZCodeUserInputResponse,
   ZCodeSessionEvent,
@@ -369,6 +370,12 @@ export interface ZCodeAgentGenerateWorkspaceTextParams extends ZCodeAgentWorkspa
 
 export interface ZCodeAgentTestModelConnectivityParams extends ZCodeAgentWorkspaceTarget {
   selection: ZCodeProviderTestModelConnectivityParams["selection"];
+  signal?: AbortSignal;
+}
+
+/** 拉取供应商模型列表；只需 providerId，凭证由 Agent 侧从本机配置读取。 */
+export interface ZCodeAgentListProviderModelsParams extends ZCodeAgentWorkspaceTarget {
+  providerId: string;
   signal?: AbortSignal;
 }
 
@@ -854,6 +861,10 @@ export interface IZCodeAgentService {
   testModelConnectivity(
     params: ZCodeAgentTestModelConnectivityParams,
   ): Promise<ZCodeProviderTestModelConnectivityResult>;
+  /** 拉取供应商模型列表；凭证由 Agent 侧读取，渲染进程只拿模型 ID。 */
+  listProviderModels(
+    params: ZCodeAgentListProviderModelsParams,
+  ): Promise<ZCodeProviderListModelsResult>;
   /**
    * @deprecated：send 主路径已收敛 v4 sendText 命令。仅剩两个消费点——
    * adapter 带附件输入回退（待附件命令面落地后移除）与 zcodeSessionService

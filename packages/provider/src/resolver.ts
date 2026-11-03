@@ -78,6 +78,9 @@ export function serializeRegistryModelConfig(
 ): RegistryModelConfigObject {
   return {
     enabled: config.enabled,
+    // 显示名必须随序列化一起送达 UI：输入框的模型选择菜单直接渲染这个 config，
+    // 之前漏掉该字段会让用户设置的自定义名称永远显示不出来。
+    ...(config.displayName ? { displayName: config.displayName } : {}),
     properties: {
       requiresMfjsToolSchema: config.properties.requiresMfjsToolSchema,
       contextWindow: config.properties.contextWindow,

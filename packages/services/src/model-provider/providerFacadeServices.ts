@@ -17,8 +17,9 @@ import {
   type SavePersonalModelDraftInput,
 } from "@zcode/provider";
 import { createServiceDescriptor } from "../descriptors.js";
-import type { ModelConnectivityResult } from "@zcode/shared";
+import type { ModelConnectivityResult, ZCodeProviderListModelsResult } from "@zcode/shared";
 import { createServiceLogger } from "../logger/serviceLogger.js";
+import { fetchProviderModelList } from "./providerModelList.js";
 
 export type {
   ProviderSettingsProviderView,
@@ -68,6 +69,12 @@ export interface IProviderSettingsService {
   testModelConnectivity(
     input: ProviderSettingsConnectivityRequest,
   ): Promise<ModelConnectivityResult>;
+  /**
+   * 请求供应商的模型列表，供「添加模型」弹窗勾选。
+   *
+   * 凭证与 baseUrl 由服务侧从已保存配置读取，不经渲染进程传递 apiKey。
+   */
+  listProviderModels(providerId: ProviderId): Promise<ZCodeProviderListModelsResult>;
 }
 
 export const IProviderSettingsService = createServiceDescriptor<IProviderSettingsService>(
@@ -205,6 +212,40 @@ export function createProviderSettingsService(
         providerId: input.providerId,
         modelId: input.modelId,
       });
+    },
+    listProviderModels: async (providerId) => {
+      await ensureReady();
+      await facade.waitForProviderOperations(providerId);
+      const provider = facade
+        .getView()
+        .providers.find((item) => item.providerId === providerId);
+      if (!provider) {
+        throw new Error("找不到该供应商配置。");
+      }
+
+      // 只支持 API Key 类型：OAuth / 套餐连接没有可枚举的模型端点。
+      const access = provider.effectiveConfig.access;
+      const api = provider.effectiveConfig.api;
+      if (access?.type !== "api-key" && access?.type !== "zhipu-coding-plan-api-key") {
+        throw new Error("当前连接方式不支持获取模型列表，请使用 API Key 连接。");
+      }
+      if (!api?.baseUrl) {
+        throw new Error("请先填写供应商 Base URL。");
+      }
+      if (!api.type) {
+        throw new Error("请先选择供应商 API 格式。");
+      }
+
+      const alreadyAddedIds = new Set(provider.models.map((item) => item.modelId));
+      return fetchProviderModelList(
+        {
+          baseUrl: api.baseUrl,
+          apiType: api.type,
+          apiKey: access.apiKey ?? null,
+          headers: api.headers ?? null,
+        },
+        alreadyAddedIds,
+      );
     },
   };
 }

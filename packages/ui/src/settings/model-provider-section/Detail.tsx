@@ -246,6 +246,7 @@ export function ModelProviderSectionDetail({
   onDelete,
   onReorderProviderModels,
   onTestModel,
+  onFetchProviderModels,
   onCodingPlanLogin,
   onRetryCodingPlan,
   onCodingPlanDisconnect,
@@ -285,6 +286,10 @@ export function ModelProviderSectionDetail({
   onDelete: (provider: ProviderSettingsFormProvider) => Promise<void>;
   onReorderProviderModels?: (providerId: string, modelIds: string[]) => Promise<void>;
   onTestModel: (providerId: string, modelId: string) => Promise<ModelConnectivityResult>;
+  /** 拉取供应商模型列表；由上层注入，失败时抛错由弹窗展示。 */
+  onFetchProviderModels?: (
+    providerId: string,
+  ) => Promise<import("@zcode/shared").ZCodeProviderListModelsResult>;
   onRetryCodingPlan?: () => void | Promise<void>;
   onCodingPlanLogin: (
     presetId: BuiltinModelProviderId,
@@ -428,6 +433,7 @@ export function ModelProviderSectionDetail({
               : undefined
           }
           onTestModel={onTestModel}
+          onFetchProviderModels={onFetchProviderModels}
           readOnlyEndpoints
           // 预置供应商名称承载固定 API Key 入口语义，
           // 允许重命名会让侧边栏和模型选择器展示含义不一致，因此只允许自定义供应商改名。
@@ -708,6 +714,7 @@ export function ModelProviderSectionDetail({
                 : undefined
             }
             onTestModel={onTestModel}
+            onFetchProviderModels={onFetchProviderModels}
             nameEditable={false}
             statusSection={
               <div className="space-y-3">
@@ -855,6 +862,7 @@ export function ModelProviderSectionDetail({
           : undefined
       }
       onTestModel={onTestModel}
+      onFetchProviderModels={onFetchProviderModels}
       presetApiKeyUrl={customApiKeyUrl}
       readOnlyEndpoints={false}
       nameEditable

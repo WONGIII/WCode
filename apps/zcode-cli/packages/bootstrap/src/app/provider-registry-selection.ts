@@ -187,7 +187,9 @@ function toModelOption(provider: Provider, model: ProviderModel): ZCodeModelOpti
   const reasoning = optionSpecs.reasoningLevel;
   return {
     ref: { providerId: provider.providerId, modelId: model.modelId },
-    label: model.modelId,
+    // 用户可为模型自定义显示名；未设置时沿用模型 ID。
+    // 这里只影响 picker / 工具栏展示，请求仍然使用 ref.modelId。
+    label: model.config.displayName?.trim() || model.modelId,
     providerLabel: provider.providerName ?? provider.providerId,
     contextWindow: properties.contextWindow,
     maxOutputTokens: optionSpecs.maxOutputTokens.max,

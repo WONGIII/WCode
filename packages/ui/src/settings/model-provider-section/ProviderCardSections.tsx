@@ -39,6 +39,7 @@ import { ModelRowInput } from "./ProviderFormControls.js";
 import { PresetProviderApiKeyBanner } from "./PresetProviderApiKeyBanner.js";
 import { type ProviderModelDraftValues } from "@/settings/model-provider-section/ProviderModelMetadata.js";
 import { ProviderModelMetadataDialog } from "@/settings/model-provider-section/ProviderModelMetadataDialog.js";
+import { ProviderModelListDialog } from "@/settings/model-provider-section/ProviderModelListDialog.js";
 import {
   PROVIDER_CONNECTION_API_FORMATS,
   ProviderApiFormatSelect,
@@ -358,6 +359,7 @@ export function ProviderModelsSection({
   onModelEnabledChange,
   onDeleteModel,
   onAddModel,
+  onFetchProviderModels,
   onReorderModelIds,
   settingsRevision = 0,
 }: {
@@ -375,12 +377,17 @@ export function ProviderModelsSection({
   onDeleteModel: (modelId: string) => void;
   onModelEnabledChange?: (modelId: string, enabled: boolean) => void | Promise<void>;
   onAddModel: (model: ProviderSettingsFormModel) => void | Promise<void>;
+  /** 拉取供应商模型列表；失败抛错，由弹窗展示。 */
+  onFetchProviderModels?: (
+    providerId: string,
+  ) => Promise<import("@zcode/shared").ZCodeProviderListModelsResult>;
   onReorderModelIds?: (modelIds: string[]) => void;
   settingsRevision?: number;
 }) {
   const { intl } = useZCodeIntl();
   const { providerSettingsService } = useServices();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [modelListDialogOpen, setModelListDialogOpen] = useState(false);
   const [addSaving, setAddSaving] = useState(false);
   const addSavingRef = useRef(false);
   const [addCommitError, setAddCommitError] = useState<string | null>(null);
@@ -474,17 +481,35 @@ export function ProviderModelsSection({
         <span className="text-ui-base text-foreground-subtle">
           {intl.formatMessage({ id: "settings.modelProvider.models" })}
         </span>
-        <Button
-          type="button"
-          variant="secondary"
-          size="default"
-          className="rounded-lg"
-          data-testid={TID_MODEL_PROVIDER_ADD_MODEL_BUTTON}
-          onClick={openAddDialog}
-        >
-          <Plus data-icon="inline-start" aria-hidden="true" />
-          {intl.formatMessage({ id: "settings.modelProvider.addModel" })}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* 从供应商 /models 拉取候选，勾选后批量添加，省去逐个手写模型 ID。 */}
+          <Button
+            className="rounded-lg"
+            data-testid="model-provider-fetch-models-button"
+            disabled={
+              !onFetchProviderModels ||
+              (providerAccess?.type !== "api-key" &&
+                providerAccess?.type !== "zhipu-coding-plan-api-key")
+            }
+            onClick={() => setModelListDialogOpen(true)}
+            size="default"
+            type="button"
+            variant="outline"
+          >
+            {intl.formatMessage({ id: "settings.modelProvider.fetchModels" })}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="default"
+            className="rounded-lg"
+            data-testid={TID_MODEL_PROVIDER_ADD_MODEL_BUTTON}
+            onClick={openAddDialog}
+          >
+            <Plus data-icon="inline-start" aria-hidden="true" />
+            {intl.formatMessage({ id: "settings.modelProvider.addModel" })}
+          </Button>
+        </div>
       </div>
       {models.length > 0 ? (
         <div className="overflow-hidden rounded-lg border border-input-border bg-input">
@@ -579,6 +604,30 @@ export function ProviderModelsSection({
           onModelIdBlur={() => {
             void editor.flush().catch(() => undefined);
           }}
+        />
+        <ProviderModelListDialog
+          fetchModels={() => {
+            if (!onFetchProviderModels) {
+              throw new Error("当前环境不支持获取模型列表。");
+            }
+            return onFetchProviderModels(providerId);
+          }}
+          onConfirm={async (modelIds) => {
+            // 复用「添加模型」同一条 commit 链路：逐个把模型 ID 写进添加草稿后提交，
+            // 保证批量新增的默认配置解析与手动逐个添加完全一致。
+            for (const modelId of modelIds) {
+              editor.reset({ ...createEmptyModel(), modelId });
+              const result = await editor.commit();
+              if (result.status === "invalid") {
+                // 单个模型解析失败时跳过，不影响其余已选模型。
+                continue;
+              }
+              await onAddModel(result.model);
+            }
+            editor.reset(createEmptyModel());
+          }}
+          onOpenChange={setModelListDialogOpen}
+          open={modelListDialogOpen}
         />
       </>
     </div>

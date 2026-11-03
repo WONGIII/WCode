@@ -309,6 +309,7 @@ export async function runZCodeProtocolAgent(
             activeProviderRegistryRuntime.runtime.registryService,
             activeProviderRegistryRuntime.configuredDefaultModelSelection,
           ),
+          // 进程级 provider settings：只有「获取模型列表」用它读已保存凭证并发请求。
           // 只读同进程已应用快照；不为子任务另发 Host RPC，也不在 ModelFactory 偷换模型。
           resolveEffectiveModelSelection: (selection) => {
             const view = modelSelectionFacade.getView(undefined, undefined, { selection });
@@ -355,6 +356,9 @@ export async function runZCodeProtocolAgent(
       refreshProviderRegistry: async (reason) => {
         await activeProviderRegistryRuntime.runtime.registryService.refresh(reason);
       },
+      // 「获取模型列表」读 baseUrl/apiKey 用；凭证不外传，请求在 CLI 侧发出。
+      readProviderConfigSnapshot: () =>
+        activeProviderRegistryRuntime.runtime.registryService.getView().providers,
       version: options.version,
     }));
     officialMcpAuthContext = server.officialMcpAuthRequestContext;

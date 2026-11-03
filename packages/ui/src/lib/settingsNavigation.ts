@@ -4,6 +4,7 @@ import { logger } from "@/logger.js";
 export type SettingsSectionId =
   | "general"
   | "appearance"
+  | "customUser"
   | "migration"
   | "browser"
   | "modelProvider"

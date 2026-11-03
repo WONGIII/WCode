@@ -72,6 +72,14 @@ const BASE_SETTINGS_SECTIONS: SettingsSectionDefinition[] = [
     titleId: "settings.appearanceTitle",
     groupId: "basics",
   },
+  // 自定义用户：用 API Key 连接时没有账号资料，侧栏只显示「连接使用」。
+  // 这里提供本机头像/名字覆盖与恢复默认（仅 localStorage）。
+  {
+    id: "customUser",
+    icon: User,
+    titleId: "settings.customUser.title",
+    groupId: "basics",
+  },
   {
     id: "modelProvider",
     icon: Package,

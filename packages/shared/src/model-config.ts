@@ -104,6 +104,9 @@ export const completeModelConfigDataSchema = z
     enabled: z.boolean(),
     properties: completeModelPropertiesDataSchema,
     optionSpecs: completeModelOptionSpecsDataSchema,
+    // 用户自定义的模型显示名称，可选。缺少时沿用模型 ID。
+    // 放在 config 顶层而不是 properties 里，因为它只影响展示，不参与模型能力解析。
+    displayName: z.string().optional(),
   })
   .strict();
 export const modelConfigDataSchema = z
@@ -111,6 +114,7 @@ export const modelConfigDataSchema = z
     ...sparseShape(completeModelConfigDataSchema.shape),
     properties: modelPropertiesDataSchema.nullable().optional(),
     optionSpecs: modelOptionSpecsDataSchema.nullable().optional(),
+    displayName: z.string().nullable().optional(),
   })
   .strict();
 

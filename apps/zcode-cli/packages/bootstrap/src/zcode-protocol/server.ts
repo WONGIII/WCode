@@ -67,6 +67,7 @@ import {
   readWorkspacePresentation,
   testProviderModelConnectivity,
 } from "./workspace-model-runtime.js";
+import { listProviderModels } from "./provider-model-query.js";
 import {
   addPluginMarketplace,
   configurePlugin,
@@ -802,6 +803,8 @@ export class ZCodeProtocolAgentServer {
         return this.cancelWorkspaceGenerateText(request.params);
       case zcodeProtocolMethods.providerTestModelConnectivity:
         return await testProviderModelConnectivity(this.context, request.params);
+      case zcodeProtocolMethods.providerListModels:
+        return await listProviderModels(this.context, request.params);
       case zcodeProtocolMethods.workspaceMcpTrust:
         return await setWorkspaceMcpTrust(this.context, request.params);
       case zcodeProtocolMethods.mcpList:

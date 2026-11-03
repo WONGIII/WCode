@@ -63,7 +63,10 @@ export function buildRegistryModelSelectGroups(
         items: provider.models.map(({ modelId, config }) => ({
           key: `registry-provider:${provider.providerId}:${modelId}`,
           value: encodeCustomModelValue(provider.providerId, modelId),
-          name: modelId,
+          // 用户自定义显示名优先；未设置时回退模型 ID。
+          // 这里才是输入框模型选择菜单真正渲染的 name 来源，
+          // 改 CLI 侧 toModelOption.label 不会影响这条链路。
+          name: config.displayName?.trim() || modelId,
           ...(shouldShowModelVisionBadge(
             modelId,
             config.properties?.inputFormat?.supportsImage,

@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef } from "react";
 import type { ProviderSettingsFormProvider } from "@/lib/providerSettingsFormTypes.js";
-import type { ModelConnectivityResult } from "@zcode/shared";
+import type { ModelConnectivityResult, ZCodeProviderListModelsResult } from "@zcode/shared";
 import type { ProviderSettingsView } from "@zcode/services";
 import { useServices } from "@/hooks/useServices.js";
 import { logger } from "@/logger.js";
@@ -25,7 +25,7 @@ export function useModelProviders(target: {
   /** 本机 Host 也无法提供对话目录时展示给用户的本地化错误文案。 */
   connectivityUnavailableMessage?: string;
 }) {
-  const { providerSettingsService, fileService } = useServices();
+  const { providerSettingsService, fileService, zcodeAgentService } = useServices();
   const providerSettingsRead = useProviderSettingsServiceView(providerSettingsService);
   const providerSettingsView =
     providerSettingsRead.state.status === "ready" ? providerSettingsRead.state.view : null;
@@ -223,9 +223,41 @@ export function useModelProviders(target: {
     ],
   );
 
+  /**
+   * 拉取供应商模型列表。
+   *
+   * 与连通性测试同一条 workspace 解析逻辑：Provider 配置是本机全局配置，
+   * 请求必须由 Agent 侧发出，才能读到已保存的 apiKey 而不经过渲染进程。
+   */
+  const listProviderModels = useCallback(
+    async (providerId: string): Promise<ZCodeProviderListModelsResult> => {
+      const remoteActive = Boolean(
+        target.connectivityWorkspaceRequired || target.workspaceIdentity?.trim(),
+      );
+      let workspacePath =
+        target.connectivityWorkspacePath?.trim() || (remoteActive ? "" : target.workspacePath);
+      if (!workspacePath.trim()) {
+        workspacePath = (await fileService.ensureConversationWorkspace()).path;
+      }
+      return zcodeAgentService.listProviderModels({
+        providerId,
+        workspacePath,
+        ...(target.workspaceIdentity ? { workspaceIdentity: target.workspaceIdentity } : {}),
+      });
+    },
+    [
+      fileService,
+      zcodeAgentService,
+      target.connectivityWorkspacePath,
+      target.connectivityWorkspaceRequired,
+      target.workspacePath,
+      target.workspaceIdentity,
+    ],
+  );
+
   return {
     modelProviders: effectiveModelProviders,
-    providerTemplates: providerSettingsView?.providerTemplates ?? [],
+    listProviderModels,    providerTemplates: providerSettingsView?.providerTemplates ?? [],
     displayOrder: providerOrdering.displayOrder,
     reorderableProviderIds: providerOrdering.reorderableProviderIds,
     loading: providerSettingsRead.state.status === "loading",

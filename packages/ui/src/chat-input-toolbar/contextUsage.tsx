@@ -157,6 +157,17 @@ const BREAKDOWN_SOURCE_LABEL_ID: Record<ContextUsageBreakdownSource, string> = {
   mcp_tool_schemas: "chat.contextUsage.breakdown.mcpTools",
 };
 
+/** 累计用量的分类行文案；缓存读写是输入的细分，单独列出便于观察缓存效果。 */
+const CUMULATIVE_TOKEN_LABEL_ID: Record<
+  ContextCumulativeTokenRow["key"],
+  string
+> = {
+  input: "chat.tokenUsage.input",
+  output: "chat.tokenUsage.output",
+  cacheRead: "chat.tokenUsage.cachedInput",
+  cacheWrite: "chat.tokenUsage.cachedWrite",
+};
+
 const BREAKDOWN_SOURCE_ORDER: Record<ContextUsageBreakdownSource, number> = {
   messages: 0,
   system_prompt: 1,
@@ -238,6 +249,69 @@ export function getContextCompressionCommand(_provider: ZCodeProvider): string {
   return "/compact";
 }
 
+/**
+ * 会话累计 token 用量。
+ *
+ * `cumulative` 来自 V4 协议的会话级 usage（服务端已按会话累计），
+ * 与上下文窗口的 usedTokens 是两个不同口径：前者是历史总消耗，后者是当前窗口占用。
+ */
+export interface ContextCumulativeTokens {
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheWriteTokens: number;
+}
+
+export interface ContextCumulativeTokenRow {
+  key: "input" | "output" | "cacheRead" | "cacheWrite";
+  tokens: number;
+}
+
+export interface ContextCumulativeTokenSummary {
+  totalTokens: number;
+  rows: ContextCumulativeTokenRow[];
+}
+
+/**
+ * 汇总累计用量并按类型分类。
+ *
+ * 口径：total = 输入 + 输出。缓存读写是输入的细分（cacheRead 命中部分、cacheWrite 写入部分），
+ * 单独列出便于观察缓存效果，但不重复计入总量，否则同一个 token 会被算两次。
+ */
+export function buildContextCumulativeTokenSummary(
+  cumulative: ContextCumulativeTokens | null | undefined,
+): ContextCumulativeTokenSummary | null {
+  if (!cumulative) {
+    return null;
+  }
+
+  const { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens } =
+    cumulative;
+  if (
+    !Number.isFinite(inputTokens) ||
+    !Number.isFinite(outputTokens) ||
+    inputTokens < 0 ||
+    outputTokens < 0
+  ) {
+    return null;
+  }
+
+  const totalTokens = inputTokens + outputTokens;
+  if (totalTokens <= 0) {
+    return null;
+  }
+
+  const rows: ContextCumulativeTokenRow[] = [
+    { key: "input", tokens: inputTokens },
+    { key: "output", tokens: outputTokens },
+    { key: "cacheRead", tokens: cacheReadTokens },
+    { key: "cacheWrite", tokens: cacheWriteTokens },
+  ].filter((row) => Number.isFinite(row.tokens) && row.tokens > 0) as
+    ContextCumulativeTokenRow[];
+
+  return { totalTokens, rows };
+}
+
 // 自动/运营完成（startedAt 为空）当前生效的 used_at；手动完成不进入触发器交互。
 function resolveAutomaticCompletedAt(
   entry: CodingPlanQuotaResetUiEntry | null,
@@ -262,6 +336,7 @@ export function ChatContextUsage({
   codingPlanUsageRemaining,
   startPlanBalance,
   taskUsage,
+  cumulativeUsage,
   selectedProvider: _selectedProvider,
   intl,
   locale,
@@ -274,6 +349,8 @@ export function ChatContextUsage({
     cache?: { hitRate: number | null };
     breakdown?: ZCodeContextUsageBreakdownItem[];
   } | null;
+  /** 会话累计 token 用量（V4 协议 cumulative）；缺失时不展示分类区块。 */
+  cumulativeUsage?: ContextCumulativeTokens | null;
   selectedProvider: ZCodeProvider;
   intl: ReturnType<typeof useZCodeIntl>["intl"];
   locale: string;
@@ -881,6 +958,10 @@ export function ChatContextUsage({
     () => buildContextUsageBreakdownSegments(renderableTaskUsage?.breakdown),
     [renderableTaskUsage?.breakdown],
   );
+  const cumulativeTokenSummary = useMemo(
+    () => buildContextCumulativeTokenSummary(cumulativeUsage),
+    [cumulativeUsage],
+  );
   const progressSegments = useMemo(
     () => buildContextUsageProgressSegments(breakdownSegments),
     [breakdownSegments],
@@ -897,7 +978,10 @@ export function ChatContextUsage({
   if (
     (!renderableTaskUsage || !contextUsageLabel) &&
     !hasCodingPlanUsageRemaining &&
-    !hasStartPlanBalance
+    !hasStartPlanBalance &&
+    // 只有累计 token 时（例如上下文窗口数据尚未就绪）也要让触发器可见，
+    // 否则用户在会话初期点不到 token 用量明细。
+    !cumulativeTokenSummary
   ) {
     return null;
   }
@@ -1016,6 +1100,38 @@ export function ChatContextUsage({
                 segments={progressSegments}
                 value={usagePercent * PERCENT_MAX}
               />
+            </div>
+          ) : null}
+          {cumulativeTokenSummary ? (
+            <div className="space-y-1.5 border-t border-border pt-3">
+              <div className="flex items-center justify-between gap-3 text-ui-sm">
+                <span className="font-medium text-foreground">
+                  {intl.formatMessage({ id: "chat.tokenUsage.total" })}
+                </span>
+                <span className="font-mono text-ui-sm tabular-nums text-foreground">
+                  {formatContextUsageTokenCount(
+                    cumulativeTokenSummary.totalTokens,
+                    locale,
+                  )}
+                </span>
+              </div>
+              <div className="grid gap-1.5">
+                {cumulativeTokenSummary.rows.map((row) => (
+                  <div
+                    className="flex min-w-0 items-center gap-2 text-ui-sm"
+                    key={row.key}
+                  >
+                    <span className="min-w-0 truncate text-foreground-subtle">
+                      {intl.formatMessage({
+                        id: CUMULATIVE_TOKEN_LABEL_ID[row.key],
+                      })}
+                    </span>
+                    <span className="ml-auto min-w-10 shrink-0 text-right font-mono text-ui-sm tabular-nums text-foreground">
+                      {formatContextUsageTokenCount(row.tokens, locale)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
           {renderableTaskUsage &&

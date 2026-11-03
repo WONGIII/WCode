@@ -138,6 +138,7 @@ import {
   zcodeProviderRuntimeHeadersRequestParamsSchema,
   zcodeProviderRefreshRegistryResultSchema,
   zcodeProviderTestModelConnectivityResultSchema,
+  zcodeProviderListModelsResultSchema,
   zcodeOfficialMcpAuthHeadersRequestParamsSchema,
   type OfficialAuthConsumerKind,
   summarizeOfficialMcpIdentityHeaders,
@@ -230,6 +231,7 @@ import type {
   ZCodeAgentInstallPluginParams,
   ZCodeAgentGenerateWorkspaceTextParams,
   ZCodeAgentTestModelConnectivityParams,
+  ZCodeAgentListProviderModelsParams,
   ZCodeAgentGoalParams,
   ZCodeAgentGrantWorkspaceHookTrustParams,
   ZCodeAgentInitializeResult,
@@ -5828,8 +5830,31 @@ export function createZCodeAgentService(
       );
     },
 
-    async sendPrompt(params: ZCodeAgentSendPromptParams) {
-      const startedAt = Date.now();
+    /**
+     * 拉取供应商模型列表。
+     *
+     * 请求在 Agent 侧发出（凭证不出主进程），这里只负责把 workspace 与 providerId 送过去。
+     */
+    async listProviderModels(params: ZCodeAgentListProviderModelsParams) {
+      const client = await getClient(params);
+      await ensureAccountProviderConfigSynced({
+        client,
+        reason: "provider_list_models",
+        workspace: params,
+        refreshRegistry: true,
+      });
+      return client.request(
+        zcodeProtocolMethods.providerListModels,
+        {
+          providerId: params.providerId,
+          workspace: buildWorkspaceRef(params),
+        },
+        zcodeProviderListModelsResultSchema,
+        { signal: params.signal },
+      );
+    },
+
+    async sendPrompt(params: ZCodeAgentSendPromptParams) {      const startedAt = Date.now();
       const client = await getClient(params);
       await ensureAccountProviderConfigSynced({
         client,

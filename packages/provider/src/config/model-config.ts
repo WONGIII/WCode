@@ -286,12 +286,15 @@ export class ModelConfig extends ConfigOverlay<ModelConfig> {
   readonly enabled?: ModelConfigObject["enabled"];
   readonly properties?: ModelPropertiesConfig | null;
   readonly optionSpecs?: ModelOptionSpecsConfig | null;
+  /** 用户自定义显示名；空字符串视为未设置（回退到模型 ID）。 */
+  readonly displayName?: string;
 
   constructor(input: ModelConfigInput = {}) {
     super();
     this.enabled = input.enabled;
     this.properties = input.properties;
     this.optionSpecs = input.optionSpecs;
+    this.displayName = normalizeModelDisplayName(input.displayName);
     Object.freeze(this);
   }
 
@@ -310,6 +313,7 @@ export class ModelConfig extends ConfigOverlay<ModelConfig> {
         config.optionSpecs == null
           ? config.optionSpecs
           : new ModelOptionSpecsConfig(config.optionSpecs),
+      displayName: config.displayName ?? undefined,
     });
   }
 
@@ -318,6 +322,9 @@ export class ModelConfig extends ConfigOverlay<ModelConfig> {
       enabled: this.overlayValue(this.enabled, next.enabled),
       properties: this.overlayConfig(this.properties, next.properties),
       optionSpecs: this.overlayConfig(this.optionSpecs, next.optionSpecs),
+      // 显示名不做层级叠加：只有显式设置的个人配置才可能覆盖继承值，
+      // 未设置时必须回到 undefined，否则空串会盖掉上层（内置）的显示名。
+      displayName: next.displayName ?? this.displayName,
     });
   }
 
@@ -330,8 +337,21 @@ export class ModelConfig extends ConfigOverlay<ModelConfig> {
       enabled: this.enabled,
       properties: this.properties?.toJSON() ?? this.properties,
       optionSpecs: this.optionSpecs?.toJSON() ?? this.optionSpecs,
+      displayName: this.displayName,
     });
   }
+}
+
+/** 去掉首尾空白；空串归一为 undefined，避免把「空显示名」持久化成真实值。 */
+export function normalizeModelDisplayName(
+  value: string | null | undefined,
+): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 type RuleWithConfig<T> = Readonly<Omit<T, "config"> & { config: ModelConfig }>;

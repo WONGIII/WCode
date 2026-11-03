@@ -17,7 +17,7 @@ export const WORKSPACE_HOOK_EVENT_NAMES = [
 ] as const;
 
 export type WorkspaceHookEventName = (typeof WORKSPACE_HOOK_EVENT_NAMES)[number];
-export type WorkspaceHookConfigFileKind = "zcode.json" | ".zcode/config.json" | "explicit";
+export type WorkspaceHookConfigFileKind = "zcode.json" | ".wcode/config.json" | "explicit";
 
 const positiveNumberSchema = z.number().finite().positive();
 
@@ -178,7 +178,7 @@ export function resolveWorkspaceHookConfiguredGates(input: {
 function buildWorkspaceHookCandidatePaths(directories: readonly string[]): string[] {
   return directories.flatMap((directory) => [
     join(directory, "zcode.json"),
-    join(directory, ".zcode", "config.json"),
+    join(directory, ".wcode", "config.json"),
   ]);
 }
 
@@ -236,17 +236,17 @@ export function createWorkspaceHookSourceInput(input: {
   const configDirectory = dirname(canonicalPath);
   return {
     canonicalPath,
-    baseDir: basename(configDirectory) === ".zcode" ? dirname(configDirectory) : configDirectory,
+    baseDir: basename(configDirectory) === ".wcode" ? dirname(configDirectory) : configDirectory,
     discoveryOrder: input.discoveryOrder,
     configFileKind: explicitProjectConfig
       ? "explicit"
       : basename(canonicalPath) === "zcode.json"
         ? "zcode.json"
-        : ".zcode/config.json",
+        : ".wcode/config.json",
     explicitProjectConfig,
     editable:
       !explicitProjectConfig &&
-      canonicalPath === resolve(input.workingDirectory, ".zcode", "config.json"),
+      canonicalPath === resolve(input.workingDirectory, ".wcode", "config.json"),
     hooks: input.hooks,
   };
 }

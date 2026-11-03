@@ -1083,6 +1083,40 @@ export interface TaskUsageQueryInput {
   sessionID: SessionId;
 }
 
+/**
+ * 单轮模型调用的持久化用量明细。
+ *
+ * 用途：Agent 进程重启后，内存里的 debug 快照与会话累计用量都会清空。
+ * 这些字段已落盘在 model_usage 表，可从磁盘重建同样的展示口径，
+ * 因此不需要为「重启后仍能看到 tok/s / TTFT / 累计 token」另建存储。
+ */
+export interface ModelUsageTurnRow {
+  id: string;
+  turnId: string | null;
+  traceId: string | null;
+  querySource: string | null;
+  status: string;
+  startedAt: number;
+  /** 首个 token 时间戳；标题生成等非流式调用为 null。 */
+  firstTokenAt: number | null;
+  completedAt: number | null;
+  durationMs: number | null;
+  /** 首 token 延迟（毫秒）；无可信首 token 时间时为 null。 */
+  timeToFirstTokenMs: number | null;
+  inputTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  cacheCreationTokens: number;
+  cacheReadTokens: number;
+  totalTokens: number;
+}
+
+export interface ModelUsageTurnQueryInput {
+  sessionID: SessionId;
+  /** 只取最近 N 条；缺省取全部。 */
+  limit?: number;
+}
+
 export interface TaskUsageQueryResult {
   sessionID: SessionId;
   totalTokens: number;
@@ -1103,6 +1137,11 @@ export interface UsageStorePort {
   pruneUsage(input?: { beforeTime?: number }): Promise<void>;
   queryAppUsage(input: AppUsageQueryInput): Promise<AppUsageQueryResult>;
   queryTaskUsage(input: TaskUsageQueryInput): Promise<TaskUsageQueryResult>;
+  /**
+   * 按时间顺序返回本会话的模型调用明细（含 TTFT 与耗时）。
+   * 供进程重启后重建 tok/s、TTFT 与会话总时长；只在内存快照为空时调用。
+   */
+  queryModelUsageTurns(input: ModelUsageTurnQueryInput): Promise<ModelUsageTurnRow[]>;
 }
 
 export interface LocalSettingStorePort {
@@ -1115,7 +1154,7 @@ export interface LocalSettingStorePort {
   }): CollaborationMode | Promise<CollaborationMode>;
 }
 
-export interface SessionStorePort {
+export interface SessionStorePort extends UsageStorePort {
   createSession(input: CreateSessionInput): Promise<SessionInfo>;
   /** legacy 兼容原语；V4 stable/compact-edit fork 禁止调用，统一走 commitForkBundle。 */
   createForkedSessionWithMetadata?(

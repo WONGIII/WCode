@@ -127,9 +127,17 @@ function normalizeStoredTitleSource(
   return "generated";
 }
 
+/**
+ * 由会话上下文用量组装 hydration 种子。
+ *
+ * cumulative 需要一起带上：会话累计 token 在 projection 里是逐次累加的，
+ * 进程重启后从 0 开始，表现为「上下文弹窗里的累计总量消失、只剩窗口大小」。
+ * 从持久化 usage 聚合出的累计值作为种子回填，重启后总量与分类才连续。
+ */
 function sessionUsageSeedFromRuntimeContextUsage(
   contextUsage: ZCodeSessionContextUsage | undefined,
   contextWindowOverride?: number,
+  cumulative?: SessionUsageSeed["cumulative"],
 ): SessionUsageSeed | null {
   if (!contextUsage || contextUsage.used <= 0) {
     return null;
@@ -142,7 +150,46 @@ function sessionUsageSeedFromRuntimeContextUsage(
       ...(contextUsage.cache ? { cache: contextUsage.cache } : {}),
       ...(contextUsage.breakdown ? { breakdown: contextUsage.breakdown } : {}),
     },
+    ...(cumulative ? { cumulative } : {}),
   };
+}
+
+/**
+ * 从持久化 usage 聚合本会话的累计 token。
+ *
+ * 会话累计值在 projection 内是逐次累加的运行时状态，重启即归零。
+ * 这里用 model_usage 的持久化聚合结果作为 hydration 种子回填，
+ * 保证重启后上下文弹窗里的累计总量与分类明细连续。
+ * 查询失败视为无种子（不回填），不阻断会话恢复。
+ */
+async function readPersistedSessionCumulativeUsage(
+  context: ZCodeProtocolAgentServerContext,
+  sessionId: string,
+): Promise<SessionUsageSeed["cumulative"] | undefined> {
+  const store = context.deps.sessionStore;
+  if (!store) {
+    return undefined;
+  }
+  try {
+    const usage = await store.queryTaskUsage({
+      sessionID: sessionId as Parameters<typeof store.queryTaskUsage>[0]["sessionID"],
+    });
+    const cumulative = {
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      cacheReadTokens: usage.cacheReadTokens,
+      cacheWriteTokens: usage.cacheCreationTokens,
+    };
+    // 全 0 视为没有历史用量，不制造假种子。
+    const hasAny =
+      cumulative.inputTokens > 0 ||
+      cumulative.outputTokens > 0 ||
+      cumulative.cacheReadTokens > 0 ||
+      cumulative.cacheWriteTokens > 0;
+    return hasAny ? cumulative : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 const STABLE_FORK_MODES = new Set<CollaborationMode>([
@@ -1768,9 +1815,12 @@ export function createConversationV4Gateway(
       const contextUsage = await readSessionContextUsage(context, sessionId, persistedMessages);
       // usage seed 会在 hydration 后再次覆盖首帧分母；必须与合成事件
       // 使用同一份当前模型 registry 真值，不能把旧 runtime projection 的窗口写回来。
+      // 累计用量从持久化 usage 聚合，避免重启后累计总量归零。
+      const cumulative = await readPersistedSessionCumulativeUsage(context, sessionId);
       return sessionUsageSeedFromRuntimeContextUsage(
         contextUsage,
         resolveSessionModelContextWindow(context, record),
+        cumulative,
       );
     },
     // ── sessions-index hooks（workspace 分桶 + 冷启动 store 种子）──────────

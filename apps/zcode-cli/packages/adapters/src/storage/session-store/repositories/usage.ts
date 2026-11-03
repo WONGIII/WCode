@@ -8,6 +8,8 @@ import type {
   AppUsageToolRow,
   TaskUsageQueryInput,
   TaskUsageQueryResult,
+  ModelUsageTurnQueryInput,
+  ModelUsageTurnRow,
   ModelUsageRecord,
   ToolUsageRecord,
   TurnUsageRecord,
@@ -585,6 +587,92 @@ export async function queryAppUsage(
       totalTokens: Number(d.totalTokens),
     })),
   };
+}
+
+/**
+ * 按时间顺序读出本会话的模型调用明细。
+ *
+ * 存在意义：Agent 进程重启后 debug 快照与累计用量只存在内存里会丢失，
+ * 而 model_usage 表已持久化同样的字段（含 first_token_at / duration_ms），
+ * 因此重启后从磁盘重建展示口径，不需要另建一套存储。
+ * 只在内存快照为空时调用，正常会话不产生额外查询。
+ */
+export async function queryModelUsageTurns(
+  db: DatabaseSync,
+  input: ModelUsageTurnQueryInput,
+): Promise<ModelUsageTurnRow[]> {
+  const limit =
+    typeof input.limit === "number" && Number.isFinite(input.limit) && input.limit > 0
+      ? Math.trunc(input.limit)
+      : null;
+
+  // 需要最近 N 条时先倒序取再翻回正序，保证调用方拿到时间升序。
+  const sql = `select
+      id,
+      turn_id as turnId,
+      trace_id as traceId,
+      query_source as querySource,
+      status,
+      started_at as startedAt,
+      first_token_at as firstTokenAt,
+      completed_at as completedAt,
+      duration_ms as durationMs,
+      time_to_first_token_ms as timeToFirstTokenMs,
+      input_tokens as inputTokens,
+      output_tokens as outputTokens,
+      reasoning_tokens as reasoningTokens,
+      cache_creation_input_tokens as cacheCreationTokens,
+      cache_read_input_tokens as cacheReadTokens,
+      computed_total_tokens as computedTotalTokens,
+      provider_total_tokens as providerTotalTokens
+    from model_usage
+    where session_id = ?
+    order by started_at ${limit === null ? "asc" : "desc"}, id asc
+    ${limit === null ? "" : "limit ?"}`;
+
+  const rawRows = (
+    limit === null ? db.prepare(sql).all(input.sessionID) : db.prepare(sql).all(input.sessionID, limit)
+  ) as Array<{
+    id: string;
+    turnId: string | null;
+    traceId: string | null;
+    querySource: string | null;
+    status: string;
+    startedAt: number | null;
+    firstTokenAt: number | null;
+    completedAt: number | null;
+    durationMs: number | null;
+    timeToFirstTokenMs: number | null;
+    inputTokens: number | null;
+    outputTokens: number | null;
+    reasoningTokens: number | null;
+    cacheCreationTokens: number | null;
+    cacheReadTokens: number | null;
+    computedTotalTokens: number | null;
+    providerTotalTokens: number | null;
+  }>;
+
+  const rows = limit === null ? rawRows : [...rawRows].reverse();
+
+  return rows.map((row) => ({
+    id: row.id,
+    turnId: row.turnId ?? null,
+    traceId: row.traceId ?? null,
+    querySource: row.querySource ?? null,
+    status: row.status,
+    startedAt: Number(row.startedAt ?? 0),
+    firstTokenAt: row.firstTokenAt === null ? null : Number(row.firstTokenAt),
+    completedAt: row.completedAt === null ? null : Number(row.completedAt),
+    durationMs: row.durationMs === null ? null : Number(row.durationMs),
+    timeToFirstTokenMs:
+      row.timeToFirstTokenMs === null ? null : Number(row.timeToFirstTokenMs),
+    inputTokens: Number(row.inputTokens ?? 0),
+    outputTokens: Number(row.outputTokens ?? 0),
+    reasoningTokens: Number(row.reasoningTokens ?? 0),
+    cacheCreationTokens: Number(row.cacheCreationTokens ?? 0),
+    cacheReadTokens: Number(row.cacheReadTokens ?? 0),
+    totalTokens: Number(row.providerTotalTokens ?? row.computedTotalTokens ?? 0),
+  }));
 }
 
 export async function queryTaskUsage(

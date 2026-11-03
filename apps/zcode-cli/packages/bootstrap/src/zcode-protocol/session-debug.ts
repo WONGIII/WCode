@@ -154,10 +154,102 @@ export function readSessionDebug(record: SessionRecord): SessionDebugSnapshot {
   return observations.get(record)?.snapshot ?? emptySnapshot(record.app.sessionId);
 }
 
-export function querySessionDebug(
+/**
+ * 从已落盘的 model_usage 记录重建调试快照。
+ *
+ * 为什么需要：observations 是 WeakMap，快照只活在 Agent 进程内存里。
+ * 进程重启后 readSessionDebug 返回空 rounds，UI 的 tok/s 与 TTFT 全部显示为空。
+ * 这些字段在 model_usage 表里已有持久化副本（first_token_at / duration_ms / usage），
+ * 因此空快照时回落到磁盘重建同一口径，旧会话也能直接看到数据。
+ *
+ * 口径与实时快照保持一致：
+ * - generationDurationMs = 总耗时 − 首 token 延迟
+ * - tokensPerSecond = outputTokens ÷ generationDuration
+ * - timeToFirstContentMs = time_to_first_token_ms
+ * 非流式调用（标题生成等）没有 first_token_at，其 TTFT 保持 null 且不参与均值。
+ */
+export async function readPersistedSessionDebug(
+  context: ZCodeProtocolAgentServerContext,
+  sessionId: string,
+): Promise<SessionDebugSnapshot> {
+  const store = context.deps.sessionStore;
+  if (!store) {
+    return emptySnapshot(sessionId);
+  }
+  const rows = await store.queryModelUsageTurns({
+    sessionID: sessionId as Parameters<typeof store.queryModelUsageTurns>[0]["sessionID"],
+    limit: SESSION_DEBUG_LIMITS.rounds,
+  });
+
+  const rounds = rows.map((row, index) => {
+    const ttft =
+      row.timeToFirstTokenMs !== null && Number.isFinite(row.timeToFirstTokenMs)
+        ? row.timeToFirstTokenMs
+        : null;
+    // 与实时口径一致：生成耗时是总耗时扣掉等首 token 的时间。
+    const generationDurationMs =
+      row.durationMs !== null && Number.isFinite(row.durationMs)
+        ? Math.max(0, row.durationMs - (ttft ?? 0))
+        : null;
+    const inputTokens = row.inputTokens;
+    const outputTokens = row.outputTokens;
+    // 只在真流式调用上算速度：标题生成等非流式调用没有 first_token_at，
+    // 其 duration_ms 覆盖整段处理而非生成区间，算进去会把「最近速度」拉成假值。
+    const isStreamingCall = ttft !== null && generationDurationMs !== null;
+
+    return {
+      eventKey: row.id,
+      requestId: row.id,
+      requestIndex: index,
+      recordedAt: row.completedAt ?? row.startedAt,
+      usage: {
+        inputTokens,
+        outputTokens,
+        totalTokens: row.totalTokens,
+        ...(row.reasoningTokens > 0 ? { reasoningTokens: row.reasoningTokens } : {}),
+        ...(row.cacheReadTokens > 0 ? { cachedInputTokens: row.cacheReadTokens } : {}),
+        ...(row.cacheCreationTokens > 0
+          ? { cachedWriteInputTokens: row.cacheCreationTokens }
+          : {}),
+      },
+      hitRate:
+        inputTokens > 0 && Number.isFinite(row.cacheReadTokens)
+          ? row.cacheReadTokens / inputTokens
+          : null,
+      generationDurationMs: isStreamingCall ? generationDurationMs : null,
+      tokensPerSecond: isStreamingCall
+        ? calculateOutputTps(outputTokens, generationDurationMs)
+        : null,
+      timeToFirstContentMs: ttft,
+    };
+  });
+
+  return {
+    sessionId,
+    rounds: rounds.slice(-SESSION_DEBUG_LIMITS.rounds),
+    // 网络条目与上下文缓存只存在于运行时，落盘不记录，重建时保持空。
+    networkEntries: [],
+    cache: null,
+  };
+}
+
+export async function querySessionDebug(
   context: ZCodeProtocolAgentServerContext,
   rawParams: unknown,
-): SessionDebugSnapshot {
+): Promise<SessionDebugSnapshot> {
   const params = sessionDebugParamsSchema.parse(rawParams);
-  return readSessionDebug(requireSession(context, params.sessionId));
+  const record = requireSession(context, params.sessionId);
+  const live = readSessionDebug(record);
+  // 内存快照有 rounds 时直接用，避免每次轮询都查磁盘。
+  if (live.rounds.length > 0) {
+    return live;
+  }
+  try {
+    const persisted = await readPersistedSessionDebug(context, params.sessionId);
+    // 磁盘也没有记录（新会话尚未调用模型）时仍返回空快照。
+    return persisted.rounds.length > 0 ? persisted : live;
+  } catch {
+    // 重建失败不能拖垮调试接口本身，退回内存快照。
+    return live;
+  }
 }

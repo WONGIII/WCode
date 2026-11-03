@@ -168,6 +168,37 @@ export function readSessionDebug(record: SessionRecord): SessionDebugSnapshot {
  * - timeToFirstContentMs = time_to_first_token_ms
  * 非流式调用（标题生成等）没有 first_token_at，其 TTFT 保持 null 且不参与均值。
  */
+/**
+ * 汇总会话全量累计用量。
+ *
+ * 必须用全量而不是按 rounds 求和：rounds 有 200 条上限，长会话会严重缩水。
+ * 内存路径与持久化路径都需要它，因此抽成公共函数。
+ */
+async function storeQueryAllTurns(
+  context: ZCodeProtocolAgentServerContext,
+  sessionId: string,
+): Promise<SessionDebugSnapshot["persistentCumulative"] | null> {
+  const store = context.deps.sessionStore;
+  if (!store) {
+    return null;
+  }
+  const allTurns = await store.queryModelUsageTurns({
+    sessionID: sessionId as Parameters<typeof store.queryModelUsageTurns>[0]["sessionID"],
+  });
+  if (allTurns.length === 0) {
+    return null;
+  }
+  return allTurns.reduce(
+    (acc, turn) => ({
+      inputTokens: acc.inputTokens + turn.inputTokens,
+      outputTokens: acc.outputTokens + turn.outputTokens,
+      cacheReadTokens: acc.cacheReadTokens + turn.cacheReadTokens,
+      cacheWriteTokens: acc.cacheWriteTokens + turn.cacheCreationTokens,
+    }),
+    { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 },
+  );
+}
+
 export async function readPersistedSessionDebug(
   context: ZCodeProtocolAgentServerContext,
   sessionId: string,
@@ -180,20 +211,7 @@ export async function readPersistedSessionDebug(
     sessionID: sessionId as Parameters<typeof store.queryModelUsageTurns>[0]["sessionID"],
     limit: SESSION_DEBUG_LIMITS.rounds,
   });
-  // 累计值必须用全量，不能被 rounds 的 200 条上限截断；
-  // 长会话（几千次调用）若按 rounds 求和，总量会严重缩水。
-  const allTurns = await store.queryModelUsageTurns({
-    sessionID: sessionId as Parameters<typeof store.queryModelUsageTurns>[0]["sessionID"],
-  });
-  const persistentCumulative = allTurns.reduce(
-    (acc, turn) => ({
-      inputTokens: acc.inputTokens + turn.inputTokens,
-      outputTokens: acc.outputTokens + turn.outputTokens,
-      cacheReadTokens: acc.cacheReadTokens + turn.cacheReadTokens,
-      cacheWriteTokens: acc.cacheWriteTokens + turn.cacheCreationTokens,
-    }),
-    { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 },
-  );
+  const persistentCumulative = (await storeQueryAllTurns(context, sessionId)) ?? undefined;
 
   const rounds = rows.map((row, index) => {
     const ttft =
@@ -255,8 +273,19 @@ export async function querySessionDebug(
   const params = sessionDebugParamsSchema.parse(rawParams);
   const record = requireSession(context, params.sessionId);
   const live = readSessionDebug(record);
-  // 内存快照有 rounds 时直接用，避免每次轮询都查磁盘。
   if (live.rounds.length > 0) {
+    // 内存快照有 rounds 时优先用它（避免每轮轮询读盘），但累计值仍需补上：
+    // 内存 rounds 会被截断到 200 条，且 persistentCumulative 只由持久化路径产出。
+    // 缺了它，前端累计弹窗会退回「仅容量条」的原版形态，直到用户发下一次消息
+    // 触发 snapshot.usage.cumulative 才变成完整版——这正是「打开任务时弹窗不完整」的原因。
+    try {
+      const allTurns = await storeQueryAllTurns(context, params.sessionId);
+      if (allTurns) {
+        return { ...live, persistentCumulative: allTurns };
+      }
+    } catch {
+      // 累计值取不到不影响调试快照本身。
+    }
     return live;
   }
   try {

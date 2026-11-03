@@ -1143,8 +1143,11 @@ function V4ComposerModelControlsImpl({
     };
   }, [usage?.contextWindow]);
   // 累计用量优先用调试快照重建值：snapshot.usage.cumulative 依赖 hydration 种子，
-  // 重启后不一定生效；而 rounds 已由后端从 model_usage 稳定重建（tok/s 同源）。
-  const rebuiltCumulativeUsage = useSessionCumulativeUsage({
+  // 重启后不一定生效；persistentCumulative 由后端按全量 model_usage 求和。
+  const {
+    cumulative: rebuiltCumulativeUsage,
+    loading: cumulativeLoading,
+  } = useSessionCumulativeUsage({
     workspacePath,
     workspaceIdentity,
     taskId: sessionId,
@@ -1282,17 +1285,21 @@ function V4ComposerModelControlsImpl({
             workspaceIdentity={workspaceIdentity}
             workspacePath={workspacePath}
           />
-          <ChatContextUsage
-            codingPlanUsageRemaining={codingPlanUsageRemaining}
-            cumulativeUsage={rebuiltCumulativeUsage ?? usage?.cumulative ?? null}
-            taskUsage={taskUsage}
-            startPlanBalance={contextStartPlanBalance}
-            selectedProvider={displayProvider}
-            intl={intl}
-            locale={locale}
-            onSendCompressionCommand={onSendCompressionCommand}
-            compressionDisabled={disabled || recoveryPending}
-          />
+          {/* 累计用量未就绪时先不渲染：否则会先露出「仅容量条」的原版形态，
+              等数据到达再闪成完整版。用户打开任务就应看到完整弹窗。 */}
+          {cumulativeLoading ? null : (
+            <ChatContextUsage
+              codingPlanUsageRemaining={codingPlanUsageRemaining}
+              cumulativeUsage={rebuiltCumulativeUsage ?? usage?.cumulative ?? null}
+              taskUsage={taskUsage}
+              startPlanBalance={contextStartPlanBalance}
+              selectedProvider={displayProvider}
+              intl={intl}
+              locale={locale}
+              onSendCompressionCommand={onSendCompressionCommand}
+              compressionDisabled={disabled || recoveryPending}
+            />
+          )}
         </>
       ) : null}
       {/* 加速轮的模型由本次卡决定，选型菜单此时不可用，所以指示器优先于选型加载态。 */}

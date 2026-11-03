@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SessionDebugRound } from "@zcode/shared";
 import { useSessionDebug } from "@/hooks/useSessionDebug.js";
 import type { ContextCumulativeTokens } from "@/chat-input-toolbar/contextUsage.js";
@@ -121,7 +121,9 @@ export function useSessionTokenSpeed({
  *
  * 用快照里的 persistentCumulative（后端按全量 model_usage 求和），
  * 而不是对 rounds 求和——rounds 有 200 条上限，长会话会缩水。
- * 内存快照路径没有该字段时返回 null，由调用方回退到 snapshot.usage.cumulative。
+ *
+ * 同时返回 loading：首帧数据未到时为 true，调用方据此推迟渲染，
+ * 避免先渲染「仅容量条」的原版形态、再闪成完整版。
  */
 export function useSessionCumulativeUsage({
   workspacePath,
@@ -133,15 +135,15 @@ export function useSessionCumulativeUsage({
   workspaceIdentity?: string;
   taskId: string | null;
   enabled?: boolean;
-}): ContextCumulativeTokens | null {
-  const { persistentCumulative } = useSessionDebug({
+}): { cumulative: ContextCumulativeTokens | null; loading: boolean } {
+  const { persistentCumulative, sessionId, error } = useSessionDebug({
     workspacePath,
     workspaceIdentity,
     taskId,
     enabled,
   });
 
-  return useMemo(() => {
+  const cumulative = useMemo(() => {
     if (!persistentCumulative) {
       return null;
     }
@@ -150,6 +152,22 @@ export function useSessionCumulativeUsage({
       inputTokens > 0 || outputTokens > 0 || cacheReadTokens > 0 || cacheWriteTokens > 0;
     return hasAny ? { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens } : null;
   }, [persistentCumulative]);
+
+  // sessionId 为空表示快照尚未返回（useSessionDebug 的 EMPTY_DEBUG 占位）。
+  // 设 2 秒上限：后端异常或会话不存在时不能永久隐藏触发器。
+  const [timedOut, setTimedOut] = useState(false);
+  useEffect(() => {
+    if (!taskId || !enabled || sessionId) {
+      setTimedOut(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setTimedOut(true), 2000);
+    return () => window.clearTimeout(timer);
+  }, [taskId, enabled, sessionId]);
+
+  const loading = Boolean(taskId) && enabled && !sessionId && !error && !timedOut;
+
+  return { cumulative, loading };
 }
 
 /** 弹窗里的用量分类行；顺序即展示顺序。 */

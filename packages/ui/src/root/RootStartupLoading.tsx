@@ -36,15 +36,18 @@ export function ZCodeStartupLogoBadge({
     <div
       data-desktop-logo-badge={size === "titlebar" ? "true" : undefined}
       className={cn(
-        "relative flex items-center justify-center bg-[linear-gradient(180deg,#000000_0%,#151718_100%)] text-[#ffffff] before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-[rgba(255,255,255,0.1)] before:content-['']",
+        // WCode 品牌：白底 + 黑字，与 build/icon.png 一致。
+        // 深色主题下白底仍可辨识，因此边框用中性灰而非白色叠加。
+        "relative flex items-center justify-center bg-[#ffffff] text-[#000000] before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-[rgba(0,0,0,0.08)] before:content-['']",
         size === "titlebar"
-          ? "size-5 rounded shadow-sm/20 before:border-white/20"
+          ? "size-5 rounded shadow-sm/20 before:border-black/15"
           : "size-24 rounded-3xl shadow-xl/20",
       )}
     >
-      {/* Button 会给 SVG 默认尺寸；紧凑 Logo 显式恢复自动高度，保持标志原始比例。 */}
+      {/* Button 会给 SVG 默认尺寸；紧凑 Logo 显式恢复自动高度，保持标志原始比例。
+          W 字形宽高比 710:435 比原 Z 的 256:218 更宽，标题栏尺寸同步放大以免挤压。 */}
       <ZCodeStartupLogo
-        className={size === "titlebar" ? "size-auto w-3.25" : "h-auto w-14"}
+        className={size === "titlebar" ? "size-auto w-4" : "h-auto w-16"}
         animated={animated}
       />
     </div>
@@ -61,10 +64,10 @@ export function ZCodeStartupLogo({
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="118"
-      height="100"
+      width="710"
+      height="435"
       fill="none"
-      viewBox="0 0 256 218"
+      viewBox="0 0 710 435"
       className={cn("shrink-0 text-current", className)}
       aria-hidden="true"
       focusable="false"
@@ -78,15 +81,24 @@ export function ZCodeStartupLogo({
           values="1;0.4;1"
         />
       ) : null}
-      <path
-        fill="currentColor"
-        d="M134.4 0.130152L116.48 25.6022C113.665 29.5699 109.054 32.0019 104.064 32.0019H6.3999V0C6.3999 0.130149 134.4 0.130152 134.4 0.130152Z"
-      />
-      <path fill="currentColor" d="M256 0.130127L102.401 217.732H0L153.599 0.130127H256Z" />
-      <path
-        fill="currentColor"
-        d="M121.601 217.732L139.65 192.134C142.465 188.166 147.076 185.734 152.067 185.734H249.604V217.736H121.601V217.732Z"
-      />
+      <g transform="translate(-157 -294)">
+        <path
+          fill="currentColor"
+          d="M 267.00 294.00 L 267.00 294.00 L 349.31 532.68 L 294.30 692.19 L 157.00 294.00 Z"
+        />
+        <path
+          fill="currentColor"
+          d="M 307.00 729.00 L 307.00 729.00 L 444.30 330.81 L 499.31 490.32 L 417.00 729.00 Z"
+        />
+        <path
+          fill="currentColor"
+          d="M 567.00 294.00 L 567.00 294.00 L 649.31 532.68 L 594.30 692.19 L 457.00 294.00 Z"
+        />
+        <path
+          fill="currentColor"
+          d="M 607.00 729.00 L 607.00 729.00 L 757.00 294.00 L 867.00 294.00 L 717.00 729.00 Z"
+        />
+      </g>
     </svg>
   );
 }

@@ -1,7 +1,11 @@
-import { useId, useMemo } from "react";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card.js";
+import { useMemo } from "react";
+import {
+  Context,
+  ContextContent,
+  ContextContentBody,
+  ContextTrigger,
+} from "@/components/ai-elements/context.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
-import { cn } from "@/components/lib/utils.js";
 import {
   useSessionTokenSpeed,
   type SessionTokenSpeedSummary,
@@ -75,10 +79,9 @@ function SpeedRows({
     if (summary.averageTtftMs === null) {
       return null;
     }
-    const seconds = summary.averageTtftMs / MS_PER_SECOND;
     return intl.formatMessage(
       { id: "chat.tokenSpeed.ttftValue" },
-      { seconds: seconds.toFixed(2) },
+      { seconds: (summary.averageTtftMs / MS_PER_SECOND).toFixed(2) },
     );
   }, [intl, summary.averageTtftMs]);
   const durationLabel = useMemo(
@@ -125,8 +128,9 @@ function SpeedRows({
 /**
  * 输入框工具栏的 token/s 指示器。
  *
- * 位置固定在上下文窗口用量左侧，样式沿用工具栏次级文字色；
- * hover 弹窗与上下文窗口面板同宽同风格，只展示 TTFT 均值与会话总用时。
+ * 位置固定在上下文窗口用量左侧。触发与弹层都复用 ai-elements 的 Context 组件，
+ * 这样 `openDelay/closeDelay` 与上下文弹窗一致（都是 0），
+ * 不会出现鼠标悬停后要等几百毫秒才浮出的延迟感。
  */
 export function ChatTokenSpeedIndicator({
   workspacePath,
@@ -138,7 +142,6 @@ export function ChatTokenSpeedIndicator({
   taskId: string | null;
 }) {
   const { intl, locale } = useZCodeIntl();
-  const contentId = useId();
   const summary = useSessionTokenSpeed({
     workspacePath,
     workspaceIdentity,
@@ -146,7 +149,7 @@ export function ChatTokenSpeedIndicator({
   });
   const speedLabel = formatTokensPerSecondLabel(summary.latestTokensPerSecond);
 
-  // 没有任何速度样本时不占位，避免新会话出现 "— tok/s" 的空壳。
+  // 没有速度样本时不占位，避免新会话出现空壳。
   if (!speedLabel) {
     return null;
   }
@@ -157,44 +160,23 @@ export function ChatTokenSpeedIndicator({
   );
 
   return (
-    <HoverCard>
-      <HoverCardTrigger asChild>
-        <span
-          aria-describedby={contentId}
-          aria-label={triggerLabel}
-          className={cn(
-            "inline-flex h-7 shrink-0 cursor-default items-center whitespace-nowrap px-1",
-            "font-mono text-ui-base tabular-nums text-foreground-subtle",
-          )}
-          data-chat-toolbar-popover-trigger="true"
-          data-testid="chat-token-speed-indicator"
-        >
-          {intl.formatMessage(
-            { id: "chat.tokenSpeed.trigger" },
-            { speed: speedLabel },
-          )}
-        </span>
-      </HoverCardTrigger>
-      <HoverCardContent
-        className="w-80 rounded-xl p-3 shadow-md"
-        side="top"
-        sideOffset={2}
-      >
-        <div className="space-y-3" id={contentId}>
-          <div className="flex min-w-0 items-center gap-3">
+    <Context maxTokens={1} usedTokens={0}>
+      <ContextTrigger aria-label={triggerLabel} data-testid="chat-token-speed-indicator">
+        {triggerLabel}
+      </ContextTrigger>
+      <ContextContent className="!w-80 !rounded-xl !shadow-md" side="top" sideOffset={2}>
+        <ContextContentBody className="space-y-3">
+          <div className="flex min-w-0 mb-3 items-center gap-3">
             <span className="shrink-0 text-ui-base font-medium text-foreground">
               {intl.formatMessage({ id: "chat.tokenSpeed.title" })}
             </span>
             <span className="ml-auto shrink-0 text-right font-mono text-ui-sm text-foreground-subtle">
-              {intl.formatMessage(
-                { id: "chat.tokenSpeed.trigger" },
-                { speed: speedLabel },
-              )}
+              {triggerLabel}
             </span>
           </div>
           <SpeedRows intl={intl} locale={locale} summary={summary} />
-        </div>
-      </HoverCardContent>
-    </HoverCard>
+        </ContextContentBody>
+      </ContextContent>
+    </Context>
   );
 }

@@ -161,8 +161,16 @@ export function ChatTokenSpeedIndicator({
 
   return (
     <Context maxTokens={1} usedTokens={0}>
-      <ContextTrigger aria-label={triggerLabel} data-testid="chat-token-speed-indicator">
-        {triggerLabel}
+      {/* ContextTrigger 内部是 HoverCardTrigger asChild，children 必须是单个元素。
+          直接传字符串会让 Radix Slot 无法克隆而整块不渲染（表现为「指示器消失了」）。 */}
+      <ContextTrigger
+        aria-label={triggerLabel}
+        data-chat-toolbar-popover-trigger="true"
+        data-testid="chat-token-speed-indicator"
+      >
+        <span className="inline-flex shrink-0 items-center whitespace-nowrap px-1 font-mono text-ui-base tabular-nums text-foreground-subtle">
+          {triggerLabel}
+        </span>
       </ContextTrigger>
       <ContextContent className="!w-80 !rounded-xl !shadow-md" side="top" sideOffset={2}>
         <ContextContentBody className="space-y-3">

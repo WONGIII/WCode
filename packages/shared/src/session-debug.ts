@@ -81,6 +81,21 @@ export const sessionDebugSnapshotSchema = z
       })
       .strict()
       .nullable(),
+    /**
+     * 会话全量累计用量，独立于 rounds 的 200 条上限。
+     *
+     * rounds 会被截断（tok/s 只需要最近若干轮），但累计值必须是全量，
+     * 否则长会话的累计总量会随上限缩水。仅在后端从持久化记录重建时提供。
+     */
+    persistentCumulative: z
+      .object({
+        inputTokens: count,
+        outputTokens: count,
+        cacheReadTokens: count,
+        cacheWriteTokens: count,
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type SessionDebugSnapshot = z.infer<typeof sessionDebugSnapshotSchema>;

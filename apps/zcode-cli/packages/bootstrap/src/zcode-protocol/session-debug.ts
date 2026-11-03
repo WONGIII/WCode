@@ -180,6 +180,20 @@ export async function readPersistedSessionDebug(
     sessionID: sessionId as Parameters<typeof store.queryModelUsageTurns>[0]["sessionID"],
     limit: SESSION_DEBUG_LIMITS.rounds,
   });
+  // 累计值必须用全量，不能被 rounds 的 200 条上限截断；
+  // 长会话（几千次调用）若按 rounds 求和，总量会严重缩水。
+  const allTurns = await store.queryModelUsageTurns({
+    sessionID: sessionId as Parameters<typeof store.queryModelUsageTurns>[0]["sessionID"],
+  });
+  const persistentCumulative = allTurns.reduce(
+    (acc, turn) => ({
+      inputTokens: acc.inputTokens + turn.inputTokens,
+      outputTokens: acc.outputTokens + turn.outputTokens,
+      cacheReadTokens: acc.cacheReadTokens + turn.cacheReadTokens,
+      cacheWriteTokens: acc.cacheWriteTokens + turn.cacheCreationTokens,
+    }),
+    { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 },
+  );
 
   const rounds = rows.map((row, index) => {
     const ttft =
@@ -230,6 +244,7 @@ export async function readPersistedSessionDebug(
     // 网络条目与上下文缓存只存在于运行时，落盘不记录，重建时保持空。
     networkEntries: [],
     cache: null,
+    persistentCumulative,
   };
 }
 

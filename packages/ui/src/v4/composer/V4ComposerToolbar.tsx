@@ -45,6 +45,7 @@ import { HighspeedModelIndicator } from "@/highspeed/HighspeedModelIndicator.js"
 import { formatHighspeedRemainingTime } from "@/highspeed/highspeedTime.js";
 import { ChatContextUsage } from "@/chat-input-toolbar/display.js";
 import { ChatTokenSpeedIndicator } from "@/chat-input-toolbar/TokenSpeedIndicator.js";
+import { useSessionCumulativeUsage } from "@/chat-input-toolbar/useSessionTokenSpeed.js";
 import {
   hasChatCodingPlanUsageRemaining,
   type ChatCodingPlanUsageRemainingConfig,
@@ -1141,6 +1142,13 @@ function V4ComposerModelControlsImpl({
       ...(contextWindow.breakdown ? { breakdown: contextWindow.breakdown } : {}),
     };
   }, [usage?.contextWindow]);
+  // 累计用量优先用调试快照重建值：snapshot.usage.cumulative 依赖 hydration 种子，
+  // 重启后不一定生效；而 rounds 已由后端从 model_usage 稳定重建（tok/s 同源）。
+  const rebuiltCumulativeUsage = useSessionCumulativeUsage({
+    workspacePath,
+    workspaceIdentity,
+    taskId: sessionId,
+  });
   // 工具条热键已转正为命令表命令：tooltip 快捷键文案读生效表，
   // 改绑后按钮提示即时跟随（不能用硬编码文案）。
   const modelShortcutLabel = useShortcutCommandLabel("openModelMenu");
@@ -1276,7 +1284,7 @@ function V4ComposerModelControlsImpl({
           />
           <ChatContextUsage
             codingPlanUsageRemaining={codingPlanUsageRemaining}
-            cumulativeUsage={usage?.cumulative ?? null}
+            cumulativeUsage={rebuiltCumulativeUsage ?? usage?.cumulative ?? null}
             taskUsage={taskUsage}
             startPlanBalance={contextStartPlanBalance}
             selectedProvider={displayProvider}

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { SessionDebugRound } from "@zcode/shared";
 import { useSessionDebug } from "@/hooks/useSessionDebug.js";
+import type { ContextCumulativeTokens } from "@/chat-input-toolbar/contextUsage.js";
 
 /** 首 token 平均 TTFT 与会话总耗时都来自调试快照的 round 序列，这里只做聚合。 */
 export interface SessionTokenSpeedSummary {
@@ -113,6 +114,42 @@ export function useSessionTokenSpeed({
   });
 
   return useMemo(() => summarizeSessionTokenSpeed(rounds), [rounds]);
+}
+
+/**
+ * 读取会话全量累计用量。
+ *
+ * 用快照里的 persistentCumulative（后端按全量 model_usage 求和），
+ * 而不是对 rounds 求和——rounds 有 200 条上限，长会话会缩水。
+ * 内存快照路径没有该字段时返回 null，由调用方回退到 snapshot.usage.cumulative。
+ */
+export function useSessionCumulativeUsage({
+  workspacePath,
+  workspaceIdentity,
+  taskId,
+  enabled = true,
+}: {
+  workspacePath: string;
+  workspaceIdentity?: string;
+  taskId: string | null;
+  enabled?: boolean;
+}): ContextCumulativeTokens | null {
+  const { persistentCumulative } = useSessionDebug({
+    workspacePath,
+    workspaceIdentity,
+    taskId,
+    enabled,
+  });
+
+  return useMemo(() => {
+    if (!persistentCumulative) {
+      return null;
+    }
+    const { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens } = persistentCumulative;
+    const hasAny =
+      inputTokens > 0 || outputTokens > 0 || cacheReadTokens > 0 || cacheWriteTokens > 0;
+    return hasAny ? { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens } : null;
+  }, [persistentCumulative]);
 }
 
 /** 弹窗里的用量分类行；顺序即展示顺序。 */

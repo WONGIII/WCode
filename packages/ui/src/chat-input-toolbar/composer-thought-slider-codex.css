@@ -3,10 +3,15 @@
  * Codex 风格推理档位滑块（可选外观）。
  *
  * 只在 [data-codex-effort="true"] 下生效，默认关闭时不改变任何既有表现。
- * 视觉参考 Codex 桌面版：蓝色轨道填充、白色圆点刻度、Ultra 档紫色流光。
+ * 视觉参考 Codex 桌面版：蓝色轨道填充、白色刻度圆点、Ultra 档紫色流光。
+ *
+ * 注意：data-codex-effort 同时加在 slider 容器自身与外层标题行上，
+ * 所以选择器必须用 `自身带属性` 形式（.composer-thought-slider[data-codex-effort="true"]），
+ * 不能用后代形式（[data-codex-effort="true"] .composer-thought-slider），
+ * 后者要求祖先带属性，会整体不生效。
  */
 
-[data-codex-effort="true"] .composer-thought-slider {
+.composer-thought-slider[data-codex-effort="true"] {
   --codex-effort-blue: #3988f6;
   --codex-effort-purple: #9c4ce3;
   --codex-effort-ultra-from: #3065de;
@@ -15,12 +20,12 @@
 }
 
 /* 填充色块只保留左端圆角，右端直角：一直伸到手柄正下方，避免两个圆角拼出接缝。 */
-[data-codex-effort="true"] .composer-thought-slider-fill {
+.composer-thought-slider[data-codex-effort="true"] .composer-thought-slider-fill {
   border-radius: 9999px 0 0 9999px;
   background: var(--codex-effort-blue);
 }
 
-[data-codex-effort="true"] .composer-thought-slider-fill::before {
+.composer-thought-slider[data-codex-effort="true"] .composer-thought-slider-fill::before {
   background: linear-gradient(
     95deg,
     var(--codex-effort-ultra-from) 0%,
@@ -43,8 +48,8 @@
 }
 
 /* Ultra 档位标题与触发器走紫色，与 Codex 一致。 */
-[data-codex-effort="true"] .codex-effort-heading[data-ultra="true"] {
-  color: var(--codex-effort-purple);
+.codex-effort-heading[data-ultra="true"] {
+  color: #9c4ce3;
 }
 
 /* Fast 闪电按钮：默认描边，激活后实心。 */
@@ -71,7 +76,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-codex-effort="true"] .composer-thought-bubbles {
+  .composer-thought-slider[data-codex-effort="true"] .composer-thought-bubbles {
     display: none;
   }
 }

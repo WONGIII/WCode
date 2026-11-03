@@ -40,15 +40,18 @@ export function ZCodeStartupLogoBadge({
         // 深色主题下白底仍可辨识，因此边框用中性灰而非白色叠加。
         "relative flex items-center justify-center bg-[#ffffff] text-[#000000] before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-[rgba(0,0,0,0.08)] before:content-['']",
         size === "titlebar"
-          ? // 标题栏/侧边栏这个尺寸很小，投影在白底上会糊成一圈灰边，去掉投影只留描边。
-            "size-5 rounded before:border-black/15"
+          ? // 标题栏/侧边栏这个尺寸很小：去掉投影与描边，避免细边框和白色字形叠成灰边。
+            // 边界靠 badge 自身的白底与深色字形对比就够了。
+            "size-5 rounded"
           : "size-24 rounded-3xl shadow-xl/20",
       )}
     >
-      {/* Button 会给 SVG 默认尺寸；紧凑 Logo 显式恢复自动高度，保持标志原始比例。
-          W 字形宽高比 710:435 比原 Z 的 256:218 更宽，标题栏尺寸同步放大以免挤压。 */}
+      {/* 必须按「高度」而不是宽度约束：W 的宽高比是 710:435（很扁），
+          若按宽度设 16px，字形高度只剩 9.8px、单笔画约 2px，
+          在这个尺寸下抗锯齿会把笔画糊成灰边，看起来像低分辨率图片。
+          改为高度约束后字形高约 14px，笔画约 3px，小图上才立得住。 */}
       <ZCodeStartupLogo
-        className={size === "titlebar" ? "size-auto w-4" : "h-auto w-16"}
+        className={size === "titlebar" ? "h-3.5 w-auto" : "h-auto w-16"}
         animated={animated}
       />
     </div>

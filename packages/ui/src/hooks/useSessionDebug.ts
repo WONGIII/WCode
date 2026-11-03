@@ -3,7 +3,14 @@ import type { SessionDebugSnapshot } from "@zcode/shared";
 import { useServices } from "@/hooks/useServices.js";
 
 const REFRESH_INTERVAL_MS = 1000;
-const EMPTY_DEBUG = { rounds: [], networkEntries: [], cache: null } as const;
+// 显式标注类型：EMPTY_DEBUG 的 as const 会让联合推导漏掉可选字段
+// （如 persistentCumulative），调用方拿不到该字段的类型。
+const EMPTY_DEBUG: SessionDebugSnapshot = {
+  sessionId: "",
+  rounds: [],
+  networkEntries: [],
+  cache: null,
+};
 
 export function useSessionDebug({
   workspacePath,
@@ -15,7 +22,7 @@ export function useSessionDebug({
   workspaceIdentity?: string;
   taskId: string | null;
   enabled?: boolean;
-}) {
+}): SessionDebugSnapshot & { error: boolean } {
   const { zcodeAgentService } = useServices();
   const scopeKey = JSON.stringify([workspaceIdentity?.trim() || workspacePath, taskId]);
   const [result, setResult] = useState<{

@@ -5,12 +5,15 @@ import type { ModelSelectGroup } from "@/ModelConfigSelect.js";
 import { isNoThoughtLevel } from "@/chat-input-toolbar/thoughtLevelOptions.js";
 import { ComposerEffortHeading } from "@/chat-input-toolbar/ComposerEffortHeading.js";
 import { ComposerProviderMenu } from "@/chat-input-toolbar/ComposerProviderMenu.js";
+import { useCodexEffortSliderSettings } from "@/hooks/useCodexEffortSliderSettings.js";
+import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu.js";
 import "@/chat-input-toolbar/composer-thought-slider.css";
+import "@/chat-input-toolbar/composer-thought-slider-codex.css";
 
 // 固定种子避免重渲染重新随机，让最高档气泡错峰流动而不影响模型选择状态。
 const EFFORT_BUBBLES = [
@@ -140,6 +143,12 @@ export function ComposerModelMenu({
   const catalogPending = groups.length === 0 && Boolean(normalizedValue);
   const showEffort = options.levels.length > 0 || catalogPending;
   const [hoveredStop, setHoveredStop] = useState<string | null>(null);
+  // Codex 风格滑块：默认关闭，开启后叠加 Codex 视觉与 Fast 开关。
+  const codexSettings = useCodexEffortSliderSettings();
+  const { intl } = useZCodeIntl();
+  // Fast 是纯视觉状态，与推理档位解耦，不参与任何持久化提交。
+  const [codexFast, setCodexFast] = useState(false);
+  const codexMode = codexSettings.enabled;
   const sliderDisabled =
     Boolean(options.providerMenu?.pending) || !currentGroupSelected || options.levels.length < 2;
   const sliderProgress =
@@ -218,14 +227,59 @@ export function ComposerModelMenu({
                   if (event.target === event.currentTarget) sliderRef.current?.focus();
                 }}
               >
-                <ComposerEffortHeading
-                  label={options.effortLabel}
-                  value={currentGroupSelected ? label : "—"}
-                  shortcut={options.effortShortcutLabel}
-                />
+                <div
+                  className="flex items-center justify-between gap-2"
+                  data-codex-effort={codexMode || undefined}
+                >
+                  <ComposerEffortHeading
+                    label={options.effortLabel}
+                    value={currentGroupSelected ? label : "—"}
+                    shortcut={options.effortShortcutLabel}
+                    ultra={
+                      codexMode &&
+                      currentGroupSelected &&
+                      currentIndex === options.levels.length - 1 &&
+                      !isNoThoughtLevel(options.levels[currentIndex]!)
+                    }
+                  />
+                  {/* Fast 闪电：纯视觉开关，不改变推理档位，也不影响实际用量。 */}
+                  {codexMode && codexSettings.showFastBolt ? (
+                    <button
+                      type="button"
+                      className="flex size-6 shrink-0 items-center justify-center rounded-md text-foreground-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
+                      data-testid="codex-effort-fast-toggle"
+                      aria-label={intl.formatMessage({ id: "settings.appearance.codexEffort.fast" })}
+                      aria-pressed={codexFast}
+                      onClick={(event) => {
+                        // 按钮在菜单项内，阻止冒泡避免 Radix 把点击当作选中并关闭菜单。
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setCodexFast((current) => !current);
+                      }}
+                    >
+                      <svg
+                        className="codex-effort-bolt"
+                        data-active={codexFast}
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path d="M14.4 2Q16 .2 15.8 2.5L15.1 8.5H20.5Q22 8.5 21 9.8L10.7 21.7Q9 23.4 9.2 21.2L10 14.2H4.2Q2.6 14.2 3.6 12.9L14.4 2Z" />
+                      </svg>
+                    </button>
+                  ) : null}
+                </div>
+                {/* 说明文字可独立关闭：Fast 无实际作用，避免用户误以为能加速。 */}
+                {codexMode && codexSettings.showNoEffectNote && codexFast ? (
+                  <p className="codex-effort-note mt-1">
+                    {intl.formatMessage({
+                      id: "settings.appearance.codexEffort.noEffectNote",
+                    })}
+                  </p>
+                ) : null}
                 <div
                   className="composer-thought-slider relative h-8 w-full rounded-full"
                   data-disabled={sliderDisabled}
+                  data-codex-effort={codexMode || undefined}
                 >
                   <div
                     // 模型或档位目录变化时只重置视觉层，避免跨模型补间，同时保留 input 焦点。

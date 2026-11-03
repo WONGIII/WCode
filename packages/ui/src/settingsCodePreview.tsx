@@ -18,6 +18,7 @@ import {
   ThemeSelect,
 } from "@/settings/SettingsPageParts.js";
 import { getCodePreviewTheme } from "@/lib/codePreviewPreferences.js";
+import { CodexEffortSliderSection } from "@/settings/CodexEffortSliderSection.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import type { CodePreviewSettings } from "@/store/index.js";
 import { THEME_MODES } from "@/settings/settingsPageConfig.js";
@@ -274,6 +275,9 @@ export function AppearanceSectionContent({
             />
           </div>
         </div>
+
+        {/* 推理档位滑块：默认关闭，关闭时不改变输入框原有表现。 */}
+        <CodexEffortSliderSection />
       </div>
     </>
   );

@@ -17,9 +17,9 @@ const skillOutcome: SkillLoadOutcome = {
     {
       name: "demo-skill",
       description: "Use this for demo workflows",
-      path: "/workspace/.zcode/skills/demo-skill/SKILL.md",
-      directory: "/workspace/.zcode/skills/demo-skill",
-      rootPath: "/workspace/.zcode/skills",
+      path: "/workspace/.wcode/skills/demo-skill/SKILL.md",
+      directory: "/workspace/.wcode/skills/demo-skill",
+      rootPath: "/workspace/.wcode/skills",
       scope: "project",
       source: "zcode",
       safeToAutoLoad: true,
@@ -68,7 +68,7 @@ describe("Skill integration", () => {
           return {
             metadata: skillOutcome.skills[0]!,
             content: "# Demo Skill\n\nFollow this workflow.",
-            baseDirectory: "/workspace/.zcode/skills/demo-skill",
+            baseDirectory: "/workspace/.wcode/skills/demo-skill",
             bytesRead: 37,
             sizeBytes: 37,
             truncated: false,
@@ -94,7 +94,7 @@ describe("Skill integration", () => {
             metadata: skillOutcome.skills[0]!,
             content:
               "# Demo Skill\n\nRead ${CLAUDE_SKILL_DIR}/references.md and ${ZCODE_SKILL_DIR}/notes.md.",
-            baseDirectory: "/workspace/.zcode/skills/demo-skill",
+            baseDirectory: "/workspace/.wcode/skills/demo-skill",
             bytesRead: 91,
             sizeBytes: 91,
             truncated: false,
@@ -104,8 +104,8 @@ describe("Skill integration", () => {
     );
 
     expect(loaded).toContain('<skill_content name="demo-skill">');
-    expect(loaded).toContain("/workspace/.zcode/skills/demo-skill/references.md");
-    expect(loaded).toContain("/workspace/.zcode/skills/demo-skill/notes.md");
+    expect(loaded).toContain("/workspace/.wcode/skills/demo-skill/references.md");
+    expect(loaded).toContain("/workspace/.wcode/skills/demo-skill/notes.md");
   });
 
   it("reports resolved skill metadata through the telemetry callback without changing content", async () => {
@@ -164,7 +164,7 @@ describe("Skill integration", () => {
         return {
           metadata: { ...skillOutcome.skills[0]!, name: request.name },
           content: "body",
-          baseDirectory: "/workspace/.zcode/skills/demo-skill",
+          baseDirectory: "/workspace/.wcode/skills/demo-skill",
           bytesRead: 4,
           sizeBytes: 4,
           truncated: false,

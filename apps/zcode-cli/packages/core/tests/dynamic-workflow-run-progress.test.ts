@@ -427,7 +427,7 @@ describe("hole-reached → run 中通知", () => {
     const calls = attachHoleSnapshot(
       runtime,
       [waiting],
-      "/repo/.zcode/workflow-drafts/triage.dwf.ts",
+      "/repo/.wcode/workflow-drafts/triage.dwf.ts",
     );
 
     await runtime.recordDynamicWorkflowRunProgress(reached);
@@ -442,7 +442,7 @@ describe("hole-reached → run 中通知", () => {
       name: "决定分组",
       type: "Verdict",
       prompt: "把 7 个候选按风险分成两组。",
-      draftPath: "/repo/.zcode/workflow-drafts/triage.dwf.ts",
+      draftPath: "/repo/.wcode/workflow-drafts/triage.dwf.ts",
       line: 12,
       before: "收集",
       after: "汇总",
@@ -458,7 +458,7 @@ describe("hole-reached → run 中通知", () => {
     expect(text).toContain("<name>决定分组</name>");
     expect(text).toContain("<type>Verdict</type>");
     expect(text).toContain("<prompt>把 7 个候选按风险分成两组。</prompt>");
-    expect(text).toContain("<draft>/repo/.zcode/workflow-drafts/triage.dwf.ts</draft>");
+    expect(text).toContain("<draft>/repo/.wcode/workflow-drafts/triage.dwf.ts</draft>");
     expect(text).toContain("<line>12</line>");
     expect(text).toContain("<before>收集</before>");
     expect(text).toContain("<after>汇总</after>");

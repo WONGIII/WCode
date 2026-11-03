@@ -64,7 +64,7 @@ function fixture(name: string): string {
 
 const BROKEN_SCRIPT = 'const x: number = "s";';
 
-// 每次 CreateWorkflow 调用都会把脚本落成 `<cwd>/.zcode/workflow-drafts/` 下的草稿（编不过也写）。
+// 每次 CreateWorkflow 调用都会把脚本落成 `<cwd>/.wcode/workflow-drafts/` 下的草稿（编不过也写）。
 // executor 缺省的工作目录是 "."，会解析到 vitest 进程的 cwd——也就是本包目录——于是每跑一遍
 // 就往源码树里漏几十个草稿（该目录自带 `*` 的 .gitignore，git status 看不见）。所以每个调用都
 // 落在这个临时目录里，跑完删掉。

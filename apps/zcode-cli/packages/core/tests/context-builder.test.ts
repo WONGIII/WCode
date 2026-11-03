@@ -459,7 +459,7 @@ describe("ContextBuilder meta user context", () => {
           keepRecentToolResults: 3,
         },
       },
-      memoryRoot: "/workspace/.zcode/memory",
+      memoryRoot: "/workspace/.wcode/memory",
       guidanceToolNames: ["AskUserQuestion", "Agent", "Skill", "TodoWrite", "Read", "Edit", "Bash"],
     }).build();
 
@@ -906,7 +906,7 @@ describe("ContextBuilder meta user context", () => {
         sources: [
           {
             scope: "user",
-            filePath: "/Users/test/.zcode/AGENTS.md",
+            filePath: "/Users/test/.wcode/AGENTS.md",
             fileName: "AGENTS.md",
             content: "default instructions",
             bytesRead: 20,
@@ -930,7 +930,7 @@ describe("ContextBuilder meta user context", () => {
     expect(meta).toContain("Codebase and user instructions are shown below.");
     expect(meta).not.toContain("# claudeMd");
     expect(meta).toContain(
-      "Contents of /Users/test/.zcode/AGENTS.md (user's private global instructions for all projects):",
+      "Contents of /Users/test/.wcode/AGENTS.md (user's private global instructions for all projects):",
     );
     expect(meta).toContain(
       "Contents of /workspace/AGENTS.md (project instructions, checked into the codebase):",
@@ -1132,9 +1132,9 @@ describe("ContextBuilder meta user context", () => {
           {
             name: "demo-skill",
             description: "Use this for demos",
-            path: "/workspace/.zcode/skills/demo/SKILL.md",
-            directory: "/workspace/.zcode/skills/demo",
-            rootPath: "/workspace/.zcode/skills",
+            path: "/workspace/.wcode/skills/demo/SKILL.md",
+            directory: "/workspace/.wcode/skills/demo",
+            rootPath: "/workspace/.wcode/skills",
             scope: "project",
             source: "zcode",
             safeToAutoLoad: true,
@@ -1449,9 +1449,9 @@ describe("ContextBuilder meta user context", () => {
           {
             name: "demo-skill",
             description: "Use this for demos",
-            path: "/workspace/.zcode/skills/demo/SKILL.md",
-            directory: "/workspace/.zcode/skills/demo",
-            rootPath: "/workspace/.zcode/skills",
+            path: "/workspace/.wcode/skills/demo/SKILL.md",
+            directory: "/workspace/.wcode/skills/demo",
+            rootPath: "/workspace/.wcode/skills",
             scope: "project",
             source: "zcode",
             safeToAutoLoad: true,
@@ -1627,9 +1627,9 @@ describe("context builder — workflow actor identity", () => {
         {
           name: "demo-skill",
           description: "Demo skill",
-          path: "/workspace/.zcode/skills/demo/SKILL.md",
-          directory: "/workspace/.zcode/skills/demo",
-          rootPath: "/workspace/.zcode/skills",
+          path: "/workspace/.wcode/skills/demo/SKILL.md",
+          directory: "/workspace/.wcode/skills/demo",
+          rootPath: "/workspace/.wcode/skills",
           scope: "project" as const,
           source: "zcode" as const,
           safeToAutoLoad: true,

@@ -104,7 +104,7 @@ const SAVED_RUN_INPUT = {
       skipTests: false,
       matrix: { os: ["mac", "win"], strict: true },
     },
-    path: "/repo/.zcode/workflows/release-check.dwf.ts",
+    path: "/repo/.wcode/workflows/release-check.dwf.ts",
     scope: "project",
   },
 };
@@ -145,7 +145,7 @@ const SAVE_INPUT = {
   whenToUse: "用户说要发版时",
   args: { target: { type: "string", required: true, description: "要检查的包" } },
   script: SCRIPT,
-  path: "/repo/.zcode/workflows/release-check.dwf.ts",
+  path: "/repo/.wcode/workflows/release-check.dwf.ts",
   overwrite: true,
   scope: "project",
 };

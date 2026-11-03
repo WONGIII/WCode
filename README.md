@@ -1,26 +1,37 @@
-# ZCode
+# WCode
 
 <div align="center">
-  <img src="public/logo/icons/1024x1024.png" alt="ZCode" width="128" height="128" />
+  <img src="packages/desktop/build/icon.png" alt="WCode" width="128" height="128" />
 </div>
-<p align="center">
-  <a href="https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=47ag983c-8fcb-4d6d-814b-5395193a712c&amp;qr_code=true">飞书社群</a> ·
-  <a href="https://discord.gg/z9aBcQXZQ3">Discord</a>
-</p>
 <p align="center">
   简体中文 | <a href="README.en.md">English</a>
 </p>
 
-ZCode 是 AI 编程工作台，提供桌面应用、浏览器界面和终端 Agent。本仓库包含客户端、后端服务、共享 UI，以及 Agent CLI 与运行时源码。
+WCode 是基于 ZCode 的本地定制版本，保留 AI 编程工作台能力（桌面应用、浏览器界面、终端 Agent），并在此基础上增加了以下增强：
+
+- **token 速度指示器**：输入框工具栏显示实时 `tok/s`，悬停可查看首 token 平均 TTFT 与会话总用时
+- **上下文累计用量**：上下文弹窗中展示会话累计 token 总量与输入/输出/缓存读写分项
+- **模型显示名称**：可为模型自定义显示名，列表中不再只显示模型 ID
+- **自定义用户**：未登录时可用自定义头像与名称替代「连接使用」
+- **获取模型列表**：配置 API Key 供应商时可直接拉取远端模型列表并勾选批量添加
+
+本仓库为私有定制分支，上游为 [zai-org/ZCode](https://github.com/zai-org/ZCode)，遵循 Apache-2.0 协议。
+
+## 与上游的差异
+
+| 项目 | 上游 ZCode | 本仓库 WCode |
+| --- | --- | --- |
+| 产品名 | ZCode | WCode |
+| 应用标识 | `dev.zcode.app` | `dev.wcode.app` |
+| 深链协议 | `zcode://` | `wcode://` |
+| 数据目录 | `~/.zcode/` | `~/.wcode/` |
+| 包名 / 环境变量 | `@zcode/*` / `ZCODE_*` | 保持不变 |
+
+> 注意：数据目录已迁移至 `~/.wcode/`，与原版 ZCode 的数据互不影响。
 
 ## 更新
 
-- **2026-10-30**：更新至 ZCode v3.17.1 版本。
-- 2026-10-19：更新至 ZCode v3.16.2 版本。
-- 2026-10-16：更新至 ZCode v3.16.1 版本。
-- 2026-10-16：更新至 ZCode v3.15.4 版本。
-- 2026-10-10：更新至 ZCode v3.15.1 版本。
-- 2026-9-23：更新至 ZCode v3.14.3 版本。
+- **2026-11-03**：基于 ZCode v3.17.1 建立 WCode 定制分支。
 
 ## 初始化
 

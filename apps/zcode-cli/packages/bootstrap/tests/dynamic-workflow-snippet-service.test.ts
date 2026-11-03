@@ -16,7 +16,7 @@ import { NodeExecutionAdapter } from "@zcode/adapters/exec";
 import { WORLD_RUN_LITERAL_CODE } from "@zcode/dynamic-workflow";
 import { createDynamicWorkflowSnippetService } from "../src/app/dynamic-workflow-snippet-service.js";
 /**
- * 独立的 run cwd：harness 把入口文件写到 `<cwd>/.zcode/workflow-runs/<runId>.mjs` 且保留，
+ * 独立的 run cwd：harness 把入口文件写到 `<cwd>/.wcode/workflow-runs/<runId>.mjs` 且保留，
  * 用 process.cwd() 会把存档留在包目录里，并让并行测试文件互相覆写同名入口文件。
  */
 const TEST_CWD: string = mkdtempSync(join(tmpdir(), "dwf-bootstrap-test-cwd-"));

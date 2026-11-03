@@ -1,26 +1,37 @@
-# ZCode
+# WCode
 
 <div align="center">
-  <img src="public/logo/icons/1024x1024.png" alt="ZCode" width="128" height="128" />
+  <img src="packages/desktop/build/icon.png" alt="WCode" width="128" height="128" />
 </div>
-<p align="center">
-  <a href="https://applink.feishu.cn/client/chat/chatter/add_by_link?link_token=47ag983c-8fcb-4d6d-814b-5395193a712c&amp;qr_code=true">Feishu community</a> ·
-  <a href="https://discord.gg/z9aBcQXZQ3">Discord</a>
-</p>
 <p align="center">
   <a href="README.md">简体中文</a> | English
 </p>
 
-ZCode is an AI coding workspace with desktop, browser, and terminal interfaces. This repository contains the clients, backend services, shared UI, and Agent CLI and runtime source code.
+WCode is a locally customized build based on ZCode. It keeps the AI coding workspace capabilities (desktop, browser, and terminal interfaces) and adds the following:
+
+- **Token speed indicator**: live `tok/s` in the composer toolbar; hover to see average first-token TTFT and total session time
+- **Cumulative context usage**: total session tokens plus input/output/cache read/write breakdown in the context popover
+- **Model display names**: give any model a custom display name instead of showing only its ID
+- **Custom user identity**: set a local avatar and name to replace "Connected" when not signed in
+- **Fetch model list**: pull the remote model list for an API-key provider and add models in bulk
+
+This is a private customized fork; upstream is [zai-org/ZCode](https://github.com/zai-org/ZCode), licensed under Apache-2.0.
+
+## Differences from upstream
+
+| Item | Upstream ZCode | This repo (WCode) |
+| --- | --- | --- |
+| Product name | ZCode | WCode |
+| App ID | `dev.zcode.app` | `dev.wcode.app` |
+| Deep link scheme | `zcode://` | `wcode://` |
+| Data directory | `~/.zcode/` | `~/.wcode/` |
+| Package names / env vars | `@zcode/*` / `ZCODE_*` | unchanged |
+
+> Note: the data directory moved to `~/.wcode/`, so it is fully isolated from the original ZCode data.
 
 ## Updates
 
-- **2026-10-30**: Updated to ZCode v3.17.1.
-- 2026-10-19: Updated to ZCode v3.16.2.
-- 2026-10-16: Updated to ZCode v3.16.1.
-- 2026-10-16: Updated to ZCode v3.15.4.
-- 2026-10-10: Updated to ZCode v3.15.1.
-- 2026-9-23: Updated to ZCode v3.14.3.
+- **2026-11-03**: Created the WCode customized branch based on ZCode v3.17.1.
 
 ## Setup
 

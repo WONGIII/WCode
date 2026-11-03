@@ -76,7 +76,7 @@ Review carefully.`,
   it("parses the P0 custom agent fields consumed by zcode-cli", () => {
     const result = parseAgentProfileFromMarkdown({
       source: "project",
-      path: "/workspace/.zcode/agents/zcode-reviewer.md",
+      path: "/workspace/.wcode/agents/zcode-reviewer.md",
       content: `---
 name: zcode-reviewer
 description: 检查实现边界\\n输出中文结论
@@ -113,7 +113,7 @@ mcpServers:
         options: { reasoningLevel: "high" },
       },
       name: "zcode-reviewer",
-      path: "/workspace/.zcode/agents/zcode-reviewer.md",
+      path: "/workspace/.wcode/agents/zcode-reviewer.md",
       skills: ["code", "review"],
       source: "project",
       systemPrompt: "你是 zcode-reviewer。\n只输出中文。",
@@ -126,7 +126,7 @@ mcpServers:
   it("preserves concrete provider and custom model values from frontmatter", () => {
     const providerModel = parseAgentProfileFromMarkdown({
       source: "user",
-      path: "/home/user/.zcode/agents/reviewer.md",
+      path: "/home/user/.wcode/agents/reviewer.md",
       content: `---
 name: reviewer
 description: Use a concrete provider model
@@ -137,7 +137,7 @@ Review carefully.`,
     });
     const customModel = parseAgentProfileFromMarkdown({
       source: "user",
-      path: "/home/user/.zcode/agents/reviewer-custom.md",
+      path: "/home/user/.wcode/agents/reviewer-custom.md",
       content: `---
 name: reviewer-custom
 description: Use the UI custom model value

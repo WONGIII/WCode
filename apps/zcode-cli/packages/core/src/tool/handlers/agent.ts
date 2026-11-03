@@ -105,7 +105,7 @@ function buildAgentProviderDescription(
     "",
     "- The agent's final report is not shown to the user — relay what matters.",
     "- Use SendMessage with the agent's ID to continue a previously spawned agent with its context intact; a new Agent call starts fresh.",
-    "- Each agent type's model, reasoning effort, and tools come from its definition (`.zcode/agents/*.md` frontmatter).",
+    "- Each agent type's model, reasoning effort, and tools come from its definition (`.wcode/agents/*.md` frontmatter).",
     // ZCode 默认前台运行；后台说明只写这一行，并要求不编造未到达的结果。
     "- `run_in_background: true` runs the agent asynchronously; you'll be notified when it completes. Never fabricate or predict a pending agent's results — the notification is never something you write yourself; if the user asks before it arrives, say it's still running.",
     // 只保留「用户点名工作流」这一种情形：工作流一律由用户显式请求触发，与系统提示词其余

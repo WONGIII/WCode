@@ -145,7 +145,7 @@ describe("plan mode tools", () => {
     expect(result.modelContent).toContain("User has approved your plan");
     expect(result.modelContent).toContain("## Approved Plan");
     expect(
-      fileSystemPort.files["/workspace/project/.zcode/plans/plan-sess_exit-plan-mode.md"],
+      fileSystemPort.files["/workspace/project/.wcode/plans/plan-sess_exit-plan-mode.md"],
     ).toBe("\n  1. Update the service boundary\n2. Add tests\n\n");
     expect(mode).toBe("build");
     expect(prePlanMode).toBeUndefined();

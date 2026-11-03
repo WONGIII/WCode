@@ -2459,14 +2459,14 @@ describe("run-launched：发起 run 那一轮的锚点（docs/execution-engine.m
         validate: () => [],
         launch: {
           inputId: "launch-input-4",
-          scriptPath: "/repo/.zcode/workflow-drafts/audit.dwf.ts",
+          scriptPath: "/repo/.wcode/workflow-drafts/audit.dwf.ts",
         },
       });
     withPath();
     expect(journal.listEvents(RUN, { types: "all", reportItems: "all" })[1]?.event).toEqual({
       type: "run-launched",
       inputId: "launch-input-4",
-      scriptPath: "/repo/.zcode/workflow-drafts/audit.dwf.ts",
+      scriptPath: "/repo/.wcode/workflow-drafts/audit.dwf.ts",
     });
 
     // 续跑那一世不再记（与锚点、子代理模型同一道门）：一个 run 的脚本文件跨生命周期唯一。
@@ -2500,7 +2500,7 @@ describe("run-launched：发起 run 那一轮的锚点（docs/execution-engine.m
         inputId: "launch-input-5",
         phaseNames: ["Research"],
         subagentModel: "zhipu/glm-5.3-flash$high",
-        scriptPath: "/repo/.zcode/workflow-drafts/audit.dwf.ts",
+        scriptPath: "/repo/.wcode/workflow-drafts/audit.dwf.ts",
       },
     });
     expect(journal.listEvents(RUN, { types: "all", reportItems: "all" })[1]?.event).toEqual({
@@ -2508,7 +2508,7 @@ describe("run-launched：发起 run 那一轮的锚点（docs/execution-engine.m
       inputId: "launch-input-5",
       phaseNames: ["Research"],
       subagentModel: "zhipu/glm-5.3-flash$high",
-      scriptPath: "/repo/.zcode/workflow-drafts/audit.dwf.ts",
+      scriptPath: "/repo/.wcode/workflow-drafts/audit.dwf.ts",
     });
   });
 

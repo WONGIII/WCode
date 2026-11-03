@@ -65,9 +65,9 @@ describe("deriveWorkflowSchedulerState", () => {
       "review",
     );
     expect(
-      WorkflowInputSchema.parse({ scriptPath: ".zcode/workflows/review.workflow.js" }),
+      WorkflowInputSchema.parse({ scriptPath: ".wcode/workflows/review.workflow.js" }),
     ).toMatchObject({
-      scriptPath: ".zcode/workflows/review.workflow.js",
+      scriptPath: ".wcode/workflows/review.workflow.js",
     });
     expect(WorkflowInputSchema.parse({ resumeFromRunId: "wf_abc123" }).resumeFromRunId).toBe(
       "wf_abc123",

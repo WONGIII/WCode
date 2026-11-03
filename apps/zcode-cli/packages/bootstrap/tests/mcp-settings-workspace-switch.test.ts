@@ -23,9 +23,9 @@ afterEach(async () => {
 async function setup() {
   const root = await mkdtemp(join(tmpdir(), "mcp-settings-switch-"));
   isolated.home = root;
-  await mkdir(join(root, ".zcode/cli"), { recursive: true });
+  await mkdir(join(root, ".wcode/cli"), { recursive: true });
   await writeFile(
-    join(root, ".zcode/cli/config.json"),
+    join(root, ".wcode/cli/config.json"),
     JSON.stringify({ storage: { dir: join(root, "storage") }, plugins: { enabled: false } }),
   );
   return root;
@@ -106,10 +106,10 @@ it("跨 workspace 状态查询保持现有连接，显式切换后迟到 OAuth �
   });
   async function params(label: string) {
     const workspace = join(root, label);
-    await mkdir(join(workspace, ".zcode"), { recursive: true });
+    await mkdir(join(workspace, ".wcode"), { recursive: true });
     const config = { type: "stdio" as const, command: label, args: [] };
     await writeFile(
-      join(workspace, ".zcode/config.json"),
+      join(workspace, ".wcode/config.json"),
       JSON.stringify({ mcp: { servers: { probe: config } } }),
     );
     const authority = createWorkspaceMcpTrust({ workingDirectory: workspace, env: {} });
@@ -247,9 +247,9 @@ it("设置连接清理失败后，同一 workspace 可以重试", async () => {
 it("设置授权只通知相同 workspace 的活跃会话，刷新失败不改写已落盘的授权结果", async () => {
   const root = await setup(),
     workspace = join(root, "workspace");
-  await mkdir(join(workspace, ".zcode"), { recursive: true });
+  await mkdir(join(workspace, ".wcode"), { recursive: true });
   await writeFile(
-    join(workspace, ".zcode/config.json"),
+    join(workspace, ".wcode/config.json"),
     JSON.stringify({ mcp: { servers: { probe: { type: "stdio", command: "fake" } } } }),
   );
   const authority = createWorkspaceMcpTrust({

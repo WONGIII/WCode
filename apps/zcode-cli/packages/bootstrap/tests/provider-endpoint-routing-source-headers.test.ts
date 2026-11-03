@@ -18,7 +18,7 @@ describe("createProviderEndpointRoutingSourceHeaders", () => {
       join(tmpdir(), "zcode-routing-source-headers-"),
     );
     tempDirs.push(dataBaseDir);
-    const stateDir = join(dataBaseDir, ".zcode", "v2");
+    const stateDir = join(dataBaseDir, ".wcode", "v2");
     await mkdir(stateDir, { recursive: true });
     await writeFile(
       join(stateDir, "telemetry-state.json"),

@@ -95,9 +95,9 @@ describe("GetWorkflowRun output schema", () => {
   it("round-trips the run's script file and keeps it absent when the run recorded none", () => {
     const withPath = GetWorkflowRunOutputSchema.parse({
       ...RUNNING,
-      scriptPath: ".zcode/workflow-drafts/audit.dwf.ts",
+      scriptPath: ".wcode/workflow-drafts/audit.dwf.ts",
     });
-    expect(withPath.scriptPath).toBe(".zcode/workflow-drafts/audit.dwf.ts");
+    expect(withPath.scriptPath).toBe(".wcode/workflow-drafts/audit.dwf.ts");
     expect("scriptPath" in GetWorkflowRunOutputSchema.parse(RUNNING)).toBe(false);
   });
 

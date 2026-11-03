@@ -253,7 +253,7 @@ describe("CreateWorkflow — inline drafts", () => {
   it("falls back to the old note, and to no scriptPath, when the draft cannot be written", async () => {
     const cwd = makeCwd();
     // `.zcode` 是个普通文件 → 草稿目录建不出来。尽力而为：调用照常完成。
-    writeFileSync(join(cwd, ".zcode"), "not a directory", "utf8");
+    writeFileSync(join(cwd, ".wcode"), "not a directory", "utf8");
     const { port, submits } = stubRunPort();
 
     const broken = await run({
@@ -625,7 +625,7 @@ describe("SaveWorkflow — `script_path`", () => {
     saveSavedWorkflow({ cwd, name: "origin", meta: { description: "old words" }, script: body });
     const draft = draftPath(cwd, "origin.dwf.ts");
     mkdirSync(join(cwd, WORKFLOW_DRAFTS_DIR), { recursive: true });
-    writeFileSync(draft, readFileSync(join(cwd, ".zcode/workflows/origin.dwf.ts"), "utf8"), "utf8");
+    writeFileSync(draft, readFileSync(join(cwd, ".wcode/workflows/origin.dwf.ts"), "utf8"), "utf8");
 
     const outcome = await run({
       input: {

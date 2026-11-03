@@ -26,7 +26,7 @@ describe("workspace Hook Trust protocol operation", () => {
           event: "SessionStart",
           matcher: null,
           displayCommand: "echo project",
-          sourcePath: ".zcode/config.json",
+          sourcePath: ".wcode/config.json",
           configuredEnabled: false,
           hookDeclarationDigest: DIGEST,
           trustState: "trusted_persistent" as const,
@@ -149,7 +149,7 @@ describe("workspace Hook Trust protocol operation", () => {
 
   it("redacts absolute paths and arbitrary implementation messages from protocol reasonCode", async () => {
     const internalMessage =
-      "Unable to read Workspace Hook config: /Users/alice/private/repo/.zcode/config.json";
+      "Unable to read Workspace Hook config: /Users/alice/private/repo/.wcode/config.json";
     const result = await grantWorkspaceHookTrustForProtocol(
       {
         workspace: { workspacePath: "/repo", workspaceKey: "/repo" },

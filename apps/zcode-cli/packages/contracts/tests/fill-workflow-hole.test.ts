@@ -22,7 +22,7 @@ describe("FillWorkflowHoleInputSchema", () => {
     const file = {
       run_id: "dwfrun-1",
       hole_id: "hole#1",
-      path: ".zcode/workflow-drafts/a.verdict.dwf.ts",
+      path: ".wcode/workflow-drafts/a.verdict.dwf.ts",
     };
     expect(FillWorkflowHoleInputSchema.parse(file)).toEqual(file);
   });
@@ -56,7 +56,7 @@ describe("FillWorkflowHoleInputSchema", () => {
       hole: {
         name: "决定分组",
         type: "Verdict",
-        draft_path: "/repo/.zcode/workflow-drafts/triage.dwf.ts",
+        draft_path: "/repo/.wcode/workflow-drafts/triage.dwf.ts",
         line: 12,
         owned_by_this_session: true,
       },
@@ -184,7 +184,7 @@ describe("CreateWorkflowOutputSchema.fill（补全行给自己起名的那一块
         fill: {
           siteId: "hole#1/hole#1",
           name: "第2步",
-          draftPath: "/w/.zcode/workflow-drafts/a.dwf.ts",
+          draftPath: "/w/.wcode/workflow-drafts/a.dwf.ts",
           line: 61,
         },
       }).success,

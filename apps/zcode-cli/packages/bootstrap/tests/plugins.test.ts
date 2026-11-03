@@ -1860,7 +1860,7 @@ describe("ZCode plugins", () => {
   it("persists sensitive plugin options in the selected User or Workspace config", async () => {
     const root = await mkdtemp(join(tmpdir(), "zcode-bootstrap-plugin-options-"));
     const userConfigPath = join(root, "user-config.json");
-    const workspaceConfigPath = join(root, ".zcode", "config.json");
+    const workspaceConfigPath = join(root, ".wcode", "config.json");
     const pluginStorageRoot = join(root, "plugins");
     const pluginRoot = join(root, "secret-plugin");
     const pluginId = "secret-plugin@inline";
@@ -1978,7 +1978,7 @@ describe("ZCode plugins", () => {
   it("writes Workspace enablement without mutating User config", async () => {
     const root = await mkdtemp(join(tmpdir(), "zcode-bootstrap-plugin-scope-"));
     const userConfigPath = join(root, "user-config.json");
-    const workspaceConfigPath = join(root, ".zcode", "config.json");
+    const workspaceConfigPath = join(root, ".wcode", "config.json");
     const pluginStorageRoot = join(root, "plugins");
     const pluginRoot = join(root, "workspace-plugin");
     const pluginId = "workspace-plugin@inline";
@@ -2028,8 +2028,8 @@ describe("ZCode plugins", () => {
     const root = await mkdtemp(join(tmpdir(), "zcode-bootstrap-nested-plugin-scope-"));
     const repositoryRoot = join(root, "repository");
     const workspaceRoot = join(repositoryRoot, "packages", "app");
-    const repositoryConfigPath = join(repositoryRoot, ".zcode", "config.json");
-    const workspaceConfigPath = join(workspaceRoot, ".zcode", "config.json");
+    const repositoryConfigPath = join(repositoryRoot, ".wcode", "config.json");
+    const workspaceConfigPath = join(workspaceRoot, ".wcode", "config.json");
     const userConfigPath = join(root, "user-config.json");
     const pluginRoot = join(root, "workspace-plugin");
     const pluginId = "workspace-plugin@inline";
@@ -2085,7 +2085,7 @@ describe("ZCode plugins", () => {
   it("resets Workspace plugin keys so effective config inherits User", async () => {
     const root = await mkdtemp(join(tmpdir(), "zcode-bootstrap-plugin-reset-"));
     const userConfigPath = join(root, "user-config.json");
-    const workspaceConfigPath = join(root, ".zcode", "config.json");
+    const workspaceConfigPath = join(root, ".wcode", "config.json");
     const pluginId = "workspace-plugin@inline";
     try {
       await writeTestFile(
@@ -2138,7 +2138,7 @@ describe("ZCode plugins", () => {
     const marketplaceRoot = join(root, "user-marketplace");
     const pluginRoot = join(marketplaceRoot, "plugins", "workspace-demo");
     const userConfigPath = join(root, "user-config.json");
-    const workspaceConfigPath = join(root, ".zcode", "config.json");
+    const workspaceConfigPath = join(root, ".wcode", "config.json");
     const marketplaceId = "workspace-market";
     const pluginName = "workspace-demo";
 
@@ -2292,7 +2292,7 @@ describe("ZCode plugins", () => {
     const marketplaceId = "workspace-market";
     try {
       await writeTestFile(
-        join(root, ".zcode", "config.json"),
+        join(root, ".wcode", "config.json"),
         JSON.stringify({
           plugins: {
             extraKnownMarketplaces: {
@@ -2420,7 +2420,7 @@ describe("ZCode plugins", () => {
     const pluginStorageRoot = join(root, "plugins");
     const originalSource = join(root, "original-marketplace");
     const workspaceSource = join(root, "workspace-marketplace");
-    const workspaceConfigPath = join(root, ".zcode", "config.json");
+    const workspaceConfigPath = join(root, ".wcode", "config.json");
     const marketplaceId = "shared-market";
     try {
       await writeTestFile(

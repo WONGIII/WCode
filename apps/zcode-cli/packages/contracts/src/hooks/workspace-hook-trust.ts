@@ -250,7 +250,7 @@ export const workspaceHookBundleSnapshotSchema = z
           canonicalPath: nonEmptyStringSchema,
           baseDir: nonEmptyStringSchema,
           discoveryOrder: nonnegativeIntegerSchema,
-          configFileKind: z.enum(["zcode.json", ".zcode/config.json", "explicit"]),
+          configFileKind: z.enum(["zcode.json", ".wcode/config.json", "explicit"]),
           explicitProjectConfig: z.boolean(),
           editable: z.boolean(),
           hooksRoot: z

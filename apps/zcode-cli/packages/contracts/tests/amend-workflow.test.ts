@@ -121,7 +121,7 @@ describe("AmendWorkflowInputSchema", () => {
   // 不给 = 沿用前驱的脚本）。「不能两个都给」住在 `validateInput` 而不是 schema——归一化之后
   // `script` 与 `path` 同时在场是合法执行态，所以运行时 schema 必须两者皆可缺、也可同在。
   it("takes the revision either inline or as a file, and carries the resolved line offset", () => {
-    const byPath = { run_id: "dwfrun-prev", path: ".zcode/workflow-drafts/x.dwf.ts" };
+    const byPath = { run_id: "dwfrun-prev", path: ".wcode/workflow-drafts/x.dwf.ts" };
     expect(AmendWorkflowInputSchema.parse(byPath)).toEqual(byPath);
     const resolved = { ...byPath, script: SCRIPT, script_line_offset: 4 };
     expect(AmendWorkflowInputSchema.parse(resolved)).toEqual(resolved);

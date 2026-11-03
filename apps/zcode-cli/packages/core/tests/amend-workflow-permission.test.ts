@@ -54,7 +54,7 @@ function fixture(name: string): string {
 
 const BROKEN_SCRIPT = 'const x: number = "s";';
 
-// 真目录而不是一个写死的 /tmp 路径：内联修订会往 `<cwd>/.zcode/workflow-drafts/` 写草稿
+// 真目录而不是一个写死的 /tmp 路径：内联修订会往 `<cwd>/.wcode/workflow-drafts/` 写草稿
 // （docs/dynamic-workflow/launch.md「Script files」），用例之间不该互相看见对方的草稿。
 const AMEND_CWD = mkdtempSync(join(tmpdir(), "dwf-amend-cwd-"));
 afterAll(() => {

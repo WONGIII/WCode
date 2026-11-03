@@ -17,9 +17,9 @@ const SESSION_CATALOG: SkillLoadOutcome = {
     {
       name: "frozen",
       description: "Frozen session skill",
-      path: "/workspace/.zcode/skills/frozen/SKILL.md",
-      directory: "/workspace/.zcode/skills/frozen",
-      rootPath: "/workspace/.zcode/skills",
+      path: "/workspace/.wcode/skills/frozen/SKILL.md",
+      directory: "/workspace/.wcode/skills/frozen",
+      rootPath: "/workspace/.wcode/skills",
       scope: "project",
       source: "zcode",
       safeToAutoLoad: true,
@@ -53,10 +53,10 @@ describe("skills/referenceCatalog protocol", () => {
       authority: "session",
       skills: [
         {
-          id: "glm:workspace:/workspace/.zcode/skills/frozen/SKILL.md",
+          id: "glm:workspace:/workspace/.wcode/skills/frozen/SKILL.md",
           name: "frozen",
           description: "Frozen session skill",
-          path: "/workspace/.zcode/skills/frozen/SKILL.md",
+          path: "/workspace/.wcode/skills/frozen/SKILL.md",
           scope: "workspace",
           enabled: true,
         },
@@ -76,7 +76,7 @@ describe("skills/referenceCatalog protocol", () => {
 
   it("rescans the current workspace catalog for a draft request", async () => {
     const root = await mkdtemp(join(tmpdir(), "zcode-skill-reference-workspace-"));
-    const skillDirectory = join(root, ".zcode", "skills", "manual-added");
+    const skillDirectory = join(root, ".wcode", "skills", "manual-added");
     await mkdir(skillDirectory, { recursive: true });
     await writeFile(
       join(skillDirectory, "SKILL.md"),

@@ -139,7 +139,7 @@ describe("CreateWorkflowInputSchema — the file sources", () => {
   it("accepts the normalized shape a `path` call resolves to", () => {
     const resolved = {
       script: SCRIPT,
-      path: "/repo/.zcode/workflow-drafts/x.dwf.ts",
+      path: "/repo/.wcode/workflow-drafts/x.dwf.ts",
       args: { depth: 3 },
       script_line_offset: 5,
     };
@@ -157,9 +157,9 @@ describe("CreateWorkflowInputSchema — the file sources", () => {
       saved: {
         name: "nightly",
         args: { depth: 3 },
-        path: "/repo/.zcode/workflows/nightly.dwf.ts",
+        path: "/repo/.wcode/workflows/nightly.dwf.ts",
         scope: "project" as const,
-        draft: "/repo/.zcode/workflow-drafts/nightly.dwf.ts",
+        draft: "/repo/.wcode/workflow-drafts/nightly.dwf.ts",
       },
       script_line_offset: 3,
     };

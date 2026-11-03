@@ -433,7 +433,7 @@ describe("tool contract declarations", () => {
       "Use SendMessage with the agent's ID to continue a previously spawned agent with its context intact; a new Agent call starts fresh.",
     );
     expect(agentDescription).toContain(
-      "Each agent type's model, reasoning effort, and tools come from its definition (`.zcode/agents/*.md` frontmatter).",
+      "Each agent type's model, reasoning effort, and tools come from its definition (`.wcode/agents/*.md` frontmatter).",
     );
     expect(agentDescription).not.toContain("ID or name");
     expect(agentDescription).not.toContain(".claude/agents");

@@ -1443,7 +1443,7 @@ describe("broker × v4 竞速", () => {
           name: "release-check",
           description: "对本仓库做一次发布前检查",
           script: "return 1;",
-          path: "/repo/.zcode/workflows/release-check.dwf.ts",
+          path: "/repo/.wcode/workflows/release-check.dwf.ts",
           overwrite: true,
           scope: "project",
         },

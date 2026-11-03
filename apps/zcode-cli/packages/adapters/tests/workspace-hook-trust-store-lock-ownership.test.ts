@@ -43,7 +43,7 @@ function record(workspaceIdentity: string, digest: string): WorkspaceHookTrustRe
     grantedAt: "2026-08-06T00:00:00.000Z",
     eventAtGrant: "SessionStart",
     displayCommandAtGrant: "echo trusted",
-    sourcePathAtGrant: ".zcode/config.json",
+    sourcePathAtGrant: ".wcode/config.json",
     sourceDiscoveryOrderAtGrant: 0,
     matcherAtGrant: "startup",
     matcherIndexAtGrant: 0,

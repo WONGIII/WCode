@@ -35,7 +35,7 @@ interface ResolvedUserCommand {
 }
 
 function commandsRoot(source: CommandRootSource): string {
-  return join(resolveUserHomeDir(), source === "zcode" ? ".zcode" : ".agents", "commands");
+  return join(resolveUserHomeDir(), source === "zcode" ? ".wcode" : ".agents", "commands");
 }
 
 function hashContent(content: Uint8Array): string {
@@ -77,7 +77,7 @@ async function collectCommandFiles(
 }
 
 /**
- * 本端用户命令：`~/.zcode/commands` 与 `~/.agents/commands` 合并，与 CLI 运行时一致，
+ * 本端用户命令：`~/.wcode/commands` 与 `~/.agents/commands` 合并，与 CLI 运行时一致，
  * 同 key 时 `.zcode` 优先（先扫描者胜出）。
  */
 async function resolveUserCommands(): Promise<Map<string, ResolvedUserCommand>> {
@@ -229,7 +229,7 @@ export function createCommandDataSyncMethods(): IDataSyncCategoryService<Command
     async checkSyncWriteAccess() {
       return await checkRemoteSyncDirectoriesWriteAccess([
         commandsRoot("zcode"),
-        join(resolveUserHomeDir(), ".zcode", "cli"),
+        join(resolveUserHomeDir(), ".wcode", "cli"),
       ]);
     },
 

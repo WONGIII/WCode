@@ -57,7 +57,7 @@ describe("formatWorkflowBlockedNotification", () => {
         line: 42,
       },
     ],
-    draftPath: "/Users/dev/proj/.zcode/workflow-drafts/audit.dwf.ts",
+    draftPath: "/Users/dev/proj/.wcode/workflow-drafts/audit.dwf.ts",
   };
 
   it("第 1 次：块里是 run、次数与每个开着的决定；散文给逐字的下一步，并说还有一次", () => {
@@ -75,7 +75,7 @@ describe("formatWorkflowBlockedNotification", () => {
     expect(text).toContain(
       '<hole id="hole#21b40fca" name="修复方案" type="Plan" line="42" waited-ms="900000"/>',
     );
-    expect(text).toContain("<draft>/Users/dev/proj/.zcode/workflow-drafts/audit.dwf.ts</draft>");
+    expect(text).toContain("<draft>/Users/dev/proj/.wcode/workflow-drafts/audit.dwf.ts</draft>");
     // 最久的那个决定等了 17 分钟。
     expect(text).toContain(
       "Workflow run nightly audit (dwfrun-1) is still waiting on you: 1 question and 1 hole are open, the oldest for 17 minutes, and you have not acted on them since your last turn ended.",
@@ -84,7 +84,7 @@ describe("formatWorkflowBlockedNotification", () => {
       "call ResolveWorkflowQuestion with its id as question_id and your answer",
     );
     expect(text).toContain('call FillWorkflowHole with run_id="dwfrun-1" and its id as hole_id');
-    expect(text).toContain("read the draft at /Users/dev/proj/.zcode/workflow-drafts/audit.dwf.ts");
+    expect(text).toContain("read the draft at /Users/dev/proj/.wcode/workflow-drafts/audit.dwf.ts");
     expect(text).toContain(
       "If a decision needs the user, tell the user exactly what you need from them and end your turn; do not guess an answer to make the reminders stop.",
     );
@@ -266,7 +266,7 @@ const openSnapshot: Partial<DynamicWorkflowRunSnapshot> = {
     },
     { siteId: "hole#bb", ordinal: 1, name: "已补", type: "Plan", state: "filled", filledAt: MIN },
   ],
-  scriptPath: "/Users/dev/proj/.zcode/workflow-drafts/x.dwf.ts",
+  scriptPath: "/Users/dev/proj/.wcode/workflow-drafts/x.dwf.ts",
 };
 
 describe("runtime 上的提醒钟", () => {
@@ -306,7 +306,7 @@ describe("runtime 上的提醒钟", () => {
     expect(text).toContain('<question id="dwfq-2" subagent="actor#2@1"');
     expect(text).toContain('<hole id="hole#aa"');
     expect(text).not.toContain("hole#bb");
-    expect(text).toContain("<draft>/Users/dev/proj/.zcode/workflow-drafts/x.dwf.ts</draft>");
+    expect(text).toContain("<draft>/Users/dev/proj/.wcode/workflow-drafts/x.dwf.ts</draft>");
     runtime.beginShutdown();
   });
 

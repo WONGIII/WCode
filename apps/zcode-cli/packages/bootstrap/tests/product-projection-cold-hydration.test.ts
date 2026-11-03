@@ -563,7 +563,7 @@ describe("ProductProjection cold hydration 可复用工作流的确认窗", () =
     saved: {
       name: "release-check",
       args: { target: "packages/core", depth: 3, skipTests: false },
-      path: "/repo/.zcode/workflows/release-check.dwf.ts",
+      path: "/repo/.wcode/workflows/release-check.dwf.ts",
       scope: "project",
     },
   };
@@ -572,7 +572,7 @@ describe("ProductProjection cold hydration 可复用工作流的确认窗", () =
     name: "release-check",
     description: "对本仓库做一次发布前检查",
     script,
-    path: "/repo/.zcode/workflows/release-check.dwf.ts",
+    path: "/repo/.wcode/workflows/release-check.dwf.ts",
     overwrite: true,
     scope: "project",
   };

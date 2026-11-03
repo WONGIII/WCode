@@ -20,7 +20,7 @@ describe("plan file continuity", () => {
     });
 
     expect(path.replace(/\\/g, "/")).toBe(
-      "/workspace/project/.zcode/plans/plan-session-with-slashes.md",
+      "/workspace/project/.wcode/plans/plan-session-with-slashes.md",
     );
   });
 
@@ -42,7 +42,7 @@ describe("plan file continuity", () => {
     });
 
     expect(result.path.replace(/\\/g, "/")).toBe(
-      "/workspace/project/.zcode/plans/plan-sess_plan-file-write.md",
+      "/workspace/project/.wcode/plans/plan-sess_plan-file-write.md",
     );
     expect(fileSystemPort.files[result.path]).toBe(approvedPlan);
   });
@@ -51,11 +51,11 @@ describe("plan file continuity", () => {
     expect(
       formatPlanFileReference({
         planContent: "1. Keep the approved plan\n2. Verify after compact",
-        planFilePath: "/workspace/project/.zcode/plans/plan-session.md",
+        planFilePath: "/workspace/project/.wcode/plans/plan-session.md",
       }),
     ).toBe(
       [
-        "A plan file exists from plan mode at: /workspace/project/.zcode/plans/plan-session.md",
+        "A plan file exists from plan mode at: /workspace/project/.wcode/plans/plan-session.md",
         "",
         "Plan contents:",
         "",
@@ -69,7 +69,7 @@ describe("plan file continuity", () => {
   it("returns a model-only plan_file_reference entry when the plan file exists", async () => {
     const sessionId = createSessionId("plan-file-reference");
     const fileSystemPort = new MemoryFileSystem({
-      "/workspace/project/.zcode/plans/plan-sess_plan-file-reference.md":
+      "/workspace/project/.wcode/plans/plan-sess_plan-file-reference.md":
         "1. Preserve plan marker E2E_PLAN_FILE_CONTINUITY",
     });
 

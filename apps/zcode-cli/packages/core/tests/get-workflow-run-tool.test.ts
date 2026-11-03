@@ -244,11 +244,11 @@ describe("GetWorkflowRun handler — running snapshot", () => {
   it("rewrites the run's script file as a workspace-relative path", async () => {
     const detail: DynamicWorkflowRunDetail = {
       ...RUNNING_DETAIL,
-      scriptPath: "/workspace/project/.zcode/workflow-drafts/audit.dwf.ts",
+      scriptPath: "/workspace/project/.wcode/workflow-drafts/audit.dwf.ts",
     };
     const output = await call("dwfrun-running", stubDetailPort({ "dwfrun-running": detail }));
 
-    expect(output.scriptPath).toBe(".zcode/workflow-drafts/audit.dwf.ts");
+    expect(output.scriptPath).toBe(".wcode/workflow-drafts/audit.dwf.ts");
   });
 
   it("keeps a script file outside the working directory absolute", async () => {
@@ -754,13 +754,13 @@ describe("GetWorkflowRun model content", () => {
   // 说的就是「怎么修订」，少了文件就等于让模型去内联重贴一份两万 token 的脚本。
   it("names the script file inside <amendable>, in both the short and the full form", () => {
     const sentence =
-      ' Its script is at .zcode/workflow-drafts/audit.dwf.ts: edit that file in place and pass `path: ".zcode/workflow-drafts/audit.dwf.ts"` to AmendWorkflow instead of a script.';
+      ' Its script is at .zcode/workflow-drafts/audit.dwf.ts: edit that file in place and pass `path: ".wcode/workflow-drafts/audit.dwf.ts"` to AmendWorkflow instead of a script.';
 
     // 健康在跑：整块只有一句话，脚本文件那一句仍然跟在后面。
     const running = String(
       getWorkflowRunToolEntry.formatModelContent?.({
         ...RUNNING_OUTPUT,
-        scriptPath: ".zcode/workflow-drafts/audit.dwf.ts",
+        scriptPath: ".wcode/workflow-drafts/audit.dwf.ts",
       }),
     );
     expect(running).toContain(`cache.${sentence}</amendable>`);
@@ -770,7 +770,7 @@ describe("GetWorkflowRun model content", () => {
       getWorkflowRunToolEntry.formatModelContent?.({
         ...RUNNING_OUTPUT,
         status: "errored" as const,
-        scriptPath: ".zcode/workflow-drafts/audit.dwf.ts",
+        scriptPath: ".wcode/workflow-drafts/audit.dwf.ts",
       }),
     );
     expect(errored).toContain("Do NOT rewrite from scratch.");

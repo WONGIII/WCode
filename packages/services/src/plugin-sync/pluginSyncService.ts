@@ -117,11 +117,11 @@ export function resolveUserHomeDir(): string {
 }
 
 export function getUserZcodeConfigPath(): string {
-  return join(resolveUserHomeDir(), ".zcode", "cli", "config.json");
+  return join(resolveUserHomeDir(), ".wcode", "cli", "config.json");
 }
 
 export function getUserZcodePluginRoot(): string {
-  return join(resolveUserHomeDir(), ".zcode", "plugins");
+  return join(resolveUserHomeDir(), ".wcode", "plugins");
 }
 
 async function exportMarketplaceSourceArchiveInternal(

@@ -11,13 +11,13 @@ import { createTestAgentRuntime } from "./test-agent-runtime.js";
 import { createTestSessionEventStore } from "./test-event-store.js";
 
 function skill(name: string): SkillMetadata {
-  const path = `/workspace/.zcode/skills/${name}/SKILL.md`;
+  const path = `/workspace/.wcode/skills/${name}/SKILL.md`;
   return {
     name,
     description: `${name} description`,
     path,
-    directory: `/workspace/.zcode/skills/${name}`,
-    rootPath: "/workspace/.zcode/skills",
+    directory: `/workspace/.wcode/skills/${name}`,
+    rootPath: "/workspace/.wcode/skills",
     scope: "project",
     source: "zcode",
     safeToAutoLoad: true,

@@ -95,7 +95,7 @@ describe("writeWorkflowDraft", () => {
   it("写不进去时返回 undefined 而不是抛：调用方退回旧文案，工具调用照常完成", async () => {
     // `.zcode` 是个普通文件 → mkdir 报 ENOTDIR。只读目录在部分平台 / root 下不成立，
     // 这一种在三个平台上都成立。
-    writeFileSync(join(cwd, ".zcode"), "not a directory", "utf8");
+    writeFileSync(join(cwd, ".wcode"), "not a directory", "utf8");
     await expect(
       writeWorkflowDraft({ cwd, name: "x", source: "return 1;" }),
     ).resolves.toBeUndefined();

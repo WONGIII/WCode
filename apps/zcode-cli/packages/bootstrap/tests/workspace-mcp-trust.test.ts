@@ -19,9 +19,9 @@ afterEach(async () => {
 it("工作区直接 MCP 不得被当作用户可信配置", async () => {
   const root = await mkdtemp(join(tmpdir(), "workspace-mcp-trust-"));
   roots.push(root);
-  await mkdir(join(root, ".zcode"));
+  await mkdir(join(root, ".wcode"));
   await writeFile(
-    join(root, ".zcode/config.json"),
+    join(root, ".wcode/config.json"),
     JSON.stringify({
       mcp: {
         servers: {
@@ -53,7 +53,7 @@ async function fixture(exitAfterCall = false) {
   const userConfigPath = join(root, "user.json");
   const marker = join(root, "started");
   const script = join(root, "server.mjs");
-  await mkdir(join(workspace, ".zcode"), { recursive: true });
+  await mkdir(join(workspace, ".wcode"), { recursive: true });
   await writeFile(userConfigPath, JSON.stringify({ storage: { dir: join(root, "user-data") } }));
   await writeFile(
     script,
@@ -81,7 +81,7 @@ for await (const line of createInterface({input:process.stdin})) {
   async function save(value: McpServerConfig = config) {
     const { source: _source, ...raw } = value;
     await writeFile(
-      join(workspace, ".zcode/config.json"),
+      join(workspace, ".wcode/config.json"),
       JSON.stringify({ mcp: { servers: { probe: raw } } }),
     );
   }
@@ -203,7 +203,7 @@ it.each(["changed", "removed", "disabled", "corrupt"] as const)(
       await port.connectServer("probe", f.config);
       if (change === "changed") await f.save({ ...f.config, env: { VERSION: "2" } });
       if (change === "disabled") await f.save({ ...f.config, enabled: false });
-      if (change === "removed") await writeFile(join(f.workspace, ".zcode/config.json"), "{}");
+      if (change === "removed") await writeFile(join(f.workspace, ".wcode/config.json"), "{}");
       if (change === "corrupt")
         await writeFile(join(f.root, "user-data/security/workspace-mcp-trust-v1.json"), "invalid");
       await port.callTool({ serverName: "probe", toolName: "probe" });
@@ -230,7 +230,7 @@ it("声明变化拒绝旧审核与旧连接配置；enabled 不扩大或清除�
   await expect(f.authority.decide("probe", old.declarationDigest, true)).rejects.toThrow(
     "workspace_mcp_declaration_changed",
   );
-  await writeFile(join(f.workspace, ".zcode/config.json"), "{}");
+  await writeFile(join(f.workspace, ".wcode/config.json"), "{}");
   expect(await f.authority.allows("probe", f.config)).toBe(false);
 });
 
@@ -303,7 +303,7 @@ it("损坏授权文件拒绝执行与授权；项目 storage.dir 不改变用户
 
 it(".agents 工作区 fallback 也必须单独审核；用户和插件来源不被误拦截", async () => {
   const f = await fixture();
-  await writeFile(join(f.workspace, ".zcode/config.json"), "{}");
+  await writeFile(join(f.workspace, ".wcode/config.json"), "{}");
   await mkdir(join(f.workspace, ".agents"));
   const { source: _source, ...raw } = f.config;
   await writeFile(
@@ -513,7 +513,7 @@ it.each(["environment", "windows-command", "isolation"])(
       ...(variant === "isolation" ? { isolation: "session" } : {}),
     };
     await writeFile(
-      join(f.workspace, ".zcode/config.json"),
+      join(f.workspace, ".wcode/config.json"),
       JSON.stringify({ mcp: { servers: { probe: raw } } }),
     );
     const platform = Object.getOwnPropertyDescriptor(process, "platform")!;
@@ -542,7 +542,7 @@ it.each(["environment", "windows-command", "isolation"])(
 it("空项目 MCP map 使用 fallback；坏邻项不阻止有效声明审核", async () => {
   const f = await fixture();
   await writeFile(
-    join(f.workspace, ".zcode/config.json"),
+    join(f.workspace, ".wcode/config.json"),
     JSON.stringify({ mcp: { servers: {} } }),
   );
   await mkdir(join(f.workspace, ".agents"));
@@ -574,7 +574,7 @@ it("项目配置损坏时保留 headless 用户来源，工作区声明仍拒绝
       mcp: { servers: { user_probe: { type: "stdio", command: "fake" } } },
     }),
   );
-  await writeFile(join(f.workspace, ".zcode/config.json"), "{broken");
+  await writeFile(join(f.workspace, ".wcode/config.json"), "{broken");
   const runtime = resolveAppRuntimeConfig({
     cliStorageRoot: join(f.root, "user-data"),
     configResult: createConfig(f.options),

@@ -96,7 +96,7 @@ import {
 import type { ExecutionPort } from "@zcode/contracts";
 import { mkdtempSync, readFileSync } from "node:fs";
 /**
- * 独立的 run cwd：harness 把入口文件写到 `<cwd>/.zcode/workflow-runs/<runId>.mjs` 且保留，
+ * 独立的 run cwd：harness 把入口文件写到 `<cwd>/.wcode/workflow-runs/<runId>.mjs` 且保留，
  * 用 process.cwd() 会把存档留在包目录里，并让并行测试文件互相覆写同名入口文件。
  */
 const TEST_CWD: string = mkdtempSync(join(tmpdir(), "dwf-bootstrap-test-cwd-"));
@@ -2301,8 +2301,8 @@ describe("dynamic workflow run service — 本 run 子代理的权限模式", ()
 // 唯一的不同是它**没有三态**：修订记的永远是新脚本的文件，绝不沿用前驱的——前驱的路径
 // 指向旧脚本，沿用它就是让模型下次去编辑一个已经不在跑的文件。
 describe("dynamic workflow run service — 本 run 的脚本文件", () => {
-  const DRAFT = "/repo/.zcode/workflow-drafts/audit.dwf.ts";
-  const REVISED = "/repo/.zcode/workflow-drafts/audit-2.dwf.ts";
+  const DRAFT = "/repo/.wcode/workflow-drafts/audit.dwf.ts";
+  const REVISED = "/repo/.wcode/workflow-drafts/audit-2.dwf.ts";
 
   const launchedOf = (harness: Harness, runId: string): RunEvent | undefined =>
     harness.journal

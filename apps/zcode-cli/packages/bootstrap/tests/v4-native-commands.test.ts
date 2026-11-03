@@ -146,8 +146,8 @@ function workspaceHookReviewRequest(input: {
     deadlineAt: input.deadlineAt,
     sourceFiles: [
       {
-        path: "/w/.zcode/config.json",
-        displayPath: ".zcode/config.json",
+        path: "/w/.wcode/config.json",
+        displayPath: ".wcode/config.json",
         editable: true,
       },
     ],
@@ -160,7 +160,7 @@ function workspaceHookReviewRequest(input: {
         type: "process",
         displayName: "echo hello",
         displayCommand: "echo hello",
-        sourcePath: "/w/.zcode/config.json",
+        sourcePath: "/w/.wcode/config.json",
         resolvedTimeoutMs: 1_000,
         resolvedMaxOutputBytes: 1_024,
         executionMode: "foreground",

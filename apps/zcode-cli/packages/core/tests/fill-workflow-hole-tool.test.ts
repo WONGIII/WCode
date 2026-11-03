@@ -116,7 +116,7 @@ function stubRunPort(options: StubPortOptions = {}): {
                 return {
                   ok: true,
                   phasesAdded: ["判定"],
-                  scriptPath: "/repo/.zcode/workflow-drafts/triage.dwf.ts",
+                  scriptPath: "/repo/.wcode/workflow-drafts/triage.dwf.ts",
                   scriptText: EFFECTIVE_SCRIPT,
                 };
               }
@@ -264,7 +264,7 @@ describe("FillWorkflowHole — resolveInput", () => {
     const { port } = stubRunPort({
       snapshot: {
         parentSessionId: sessionOf(name),
-        scriptPath: "/repo/.zcode/workflow-drafts/triage.dwf.ts",
+        scriptPath: "/repo/.wcode/workflow-drafts/triage.dwf.ts",
         holes: [WAITING_HOLE],
       },
     });
@@ -286,7 +286,7 @@ describe("FillWorkflowHole — resolveInput", () => {
         hole: {
           name: "决定分组",
           type: "Verdict",
-          draft_path: "/repo/.zcode/workflow-drafts/triage.dwf.ts",
+          draft_path: "/repo/.wcode/workflow-drafts/triage.dwf.ts",
           line: 12,
           owned_by_this_session: true,
         },

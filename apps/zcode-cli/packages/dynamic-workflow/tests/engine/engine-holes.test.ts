@@ -187,9 +187,9 @@ describe("WorkflowEngine — fillHole(): one synchronous step", () => {
   it("carries the draft a fill minted on hole-filled, and nothing when the fill has none", () => {
     const { engine, driver } = setup();
     void engine.hole("hole#1", "Verdict");
-    engine.fillHole(fillFor({ scriptPath: "/repo/.zcode/workflow-drafts/nightly.dwf.ts" }));
+    engine.fillHole(fillFor({ scriptPath: "/repo/.wcode/workflow-drafts/nightly.dwf.ts" }));
     const [filled] = driver.eventsOfType("hole-filled");
-    expect(filled).toMatchObject({ scriptPath: "/repo/.zcode/workflow-drafts/nightly.dwf.ts" });
+    expect(filled).toMatchObject({ scriptPath: "/repo/.wcode/workflow-drafts/nightly.dwf.ts" });
     expect("scriptPath" in (driver.eventsOfType("hole-filled")[0] ?? {})).toBe(true);
     const { engine: plain, driver: plainDriver } = setup();
     void plain.hole("hole#1", "Verdict");

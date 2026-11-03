@@ -102,14 +102,14 @@ describe("readRunScriptPath：从 journal 读回脚本文件", () => {
     journal.appendEvent("r-path", {
       type: "run-launched",
       inputId: "launch-2",
-      scriptPath: "/repo/.zcode/workflow-drafts/audit.dwf.ts",
+      scriptPath: "/repo/.wcode/workflow-drafts/audit.dwf.ts",
     });
     journal.appendEvent("r-path", {
       type: "run-started",
       runId: "r-path",
       caps: { maxConcurrency: 1 },
     });
-    expect(readRunScriptPath(journal, "r-path")).toBe("/repo/.zcode/workflow-drafts/audit.dwf.ts");
+    expect(readRunScriptPath(journal, "r-path")).toBe("/repo/.wcode/workflow-drafts/audit.dwf.ts");
   });
 
   // 冷读的另一半：读回 undefined 之后，两条读面上的字段必须**整个不出现**。

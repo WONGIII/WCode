@@ -878,8 +878,8 @@ test("passes custom command suggestions into the TUI", async () => {
             disableNonInteractive: false,
             frontmatterKeys: [],
             name: "review",
-            path: "/workspace/.zcode/commands/review.md",
-            rootPath: "/workspace/.zcode/commands",
+            path: "/workspace/.wcode/commands/review.md",
+            rootPath: "/workspace/.wcode/commands",
             scope: "project",
             source: "zcode",
           },
@@ -925,7 +925,7 @@ test("command center expands custom commands before submitting to runtime", asyn
         metadata: {
           description: "Review custom changes",
           name: "review",
-          path: "/workspace/.zcode/commands/review.md",
+          path: "/workspace/.wcode/commands/review.md",
           scope: "project",
           source: "zcode",
         },
@@ -960,8 +960,8 @@ test("zcode commands list prints custom commands", async () => {
             disableNonInteractive: false,
             frontmatterKeys: [],
             name: "review",
-            path: "/workspace/project/.zcode/commands/review.md",
-            rootPath: "/workspace/project/.zcode/commands",
+            path: "/workspace/project/.wcode/commands/review.md",
+            rootPath: "/workspace/project/.wcode/commands",
             scope: "project",
             source: "zcode",
           },
@@ -992,8 +992,8 @@ test("zcode login runs OAuth flow and prints the authorization URL", async () =>
         poll_token: "poll-token",
       });
       return {
-        configPath: "/home/test/.zcode/v2/model-selection.json",
-        credentialsPath: "/home/test/.zcode/v2/credentials.json",
+        configPath: "/home/test/.wcode/v2/model-selection.json",
+        credentialsPath: "/home/test/.wcode/v2/credentials.json",
         model: "zai/glm-5.1",
         providerId: "zai",
         user: {
@@ -1024,7 +1024,7 @@ test("zcode logout clears shared OAuth credentials", async () => {
     logoutZCodeCli: async () => {
       logoutCalled = true;
       return {
-        credentialsPath: "/home/test/.zcode/v2/credentials.json",
+        credentialsPath: "/home/test/.wcode/v2/credentials.json",
       };
     },
   });
@@ -1086,8 +1086,8 @@ test("command center handles login and logout locally", async () => {
         poll_interval_sec: 2,
       });
       return {
-        configPath: "/home/test/.zcode/v2/model-selection.json",
-        credentialsPath: "/home/test/.zcode/v2/credentials.json",
+        configPath: "/home/test/.wcode/v2/model-selection.json",
+        credentialsPath: "/home/test/.wcode/v2/credentials.json",
         model: "zai/glm-5.1",
         providerId: "zai",
         user: {
@@ -1100,7 +1100,7 @@ test("command center handles login and logout locally", async () => {
     configureApiKey: async (options) => {
       apiKeyCalled = options.providerId === "bigmodel" && options.apiKey === "manual-key";
       return {
-        configPath: "/home/test/.zcode/v2/model-selection.json",
+        configPath: "/home/test/.wcode/v2/model-selection.json",
         model: "bigmodel/glm-5.1",
         providerId: "bigmodel",
       };
@@ -1108,7 +1108,7 @@ test("command center handles login and logout locally", async () => {
     logout: async () => {
       logoutCalled = true;
       return {
-        credentialsPath: "/home/test/.zcode/v2/credentials.json",
+        credentialsPath: "/home/test/.wcode/v2/credentials.json",
       };
     },
     resumeApp: async () => {
@@ -1223,7 +1223,7 @@ const reviewCustomCommand = {
   metadata: {
     description: "Review custom changes",
     name: "review",
-    path: "/workspace/.zcode/commands/review.md",
+    path: "/workspace/.wcode/commands/review.md",
     scope: "project",
     source: "zcode",
   },
@@ -1294,7 +1294,7 @@ test("headless prompt keeps a facade-reserved custom command name on the command
         metadata: {
           description: "Compress things",
           name: "compress",
-          path: "/workspace/.zcode/commands/compress.md",
+          path: "/workspace/.wcode/commands/compress.md",
           scope: "project",
           source: "zcode",
         },
@@ -1337,7 +1337,7 @@ test("headless prompt propagates a custom command load failure that is not a mis
   const exitCode = await run(ctx, {
     ...createPromptDeps(),
     loadCustomCommand: async () => {
-      throw new Error("EACCES: permission denied, open '/workspace/.zcode/commands/review.md'");
+      throw new Error("EACCES: permission denied, open '/workspace/.wcode/commands/review.md'");
     },
     isReservedSlashCommandName: () => false,
   });
@@ -1440,11 +1440,11 @@ test("TUI bare skill command lists skills when startup metadata is unavailable",
         skills: [
           {
             description: "Use for demo tasks.",
-            directory: "/workspace/project/.zcode/skills/demo",
+            directory: "/workspace/project/.wcode/skills/demo",
             frontmatterKeys: ["name", "description"],
             name: "demo-skill",
-            path: "/workspace/project/.zcode/skills/demo/SKILL.md",
-            rootPath: "/workspace/project/.zcode/skills",
+            path: "/workspace/project/.wcode/skills/demo/SKILL.md",
+            rootPath: "/workspace/project/.wcode/skills",
             safeToAutoLoad: true,
             scope: "project",
             source: "zcode",
@@ -3117,7 +3117,7 @@ test("command center toggles plugins and refreshes the picker", async () => {
           enabled = nextEnabled;
           return {
             enabled,
-            path: "/home/test/.zcode/cli/config.json",
+            path: "/home/test/.wcode/cli/config.json",
             plugin: {
               commandRootCount: 1,
               dataPath: "/tmp/zcode/plugins/data/ios-simulator@zcode-plugins-official",
@@ -3838,7 +3838,7 @@ test("command center lists skills without sending a model prompt", async () => {
           {
             description: "Use for demo tasks.",
             name: "demo-skill",
-            path: "/workspace/project/.zcode/skills/demo/SKILL.md",
+            path: "/workspace/project/.wcode/skills/demo/SKILL.md",
             scope: "project",
             source: "zcode",
             whenToUse: "When demo files change.",
@@ -4519,7 +4519,7 @@ test("zcode plugins enable persists the selected plugin", async () => {
       assert.equal(options.workingDirectory, "/workspace/project");
       return {
         enabled: true,
-        path: "/home/test/.zcode/cli/config.json",
+        path: "/home/test/.wcode/cli/config.json",
         plugin: {
           commandRootCount: 1,
           dataPath: "/tmp/zcode/plugins/data/ios-dev@zcode-plugins-official",
@@ -4577,7 +4577,7 @@ test("lists skills in human format", async () => {
           {
             code: "skill_scan_failed",
             message: "Failed to scan skill directory: demo",
-            path: "/workspace/project/.zcode/skills/demo/SKILL.md",
+            path: "/workspace/project/.wcode/skills/demo/SKILL.md",
             severity: "warning",
             skillName: "demo",
           },
@@ -4585,11 +4585,11 @@ test("lists skills in human format", async () => {
         skills: [
           {
             description: "Use for demo tasks.",
-            directory: "/workspace/project/.zcode/skills/demo",
+            directory: "/workspace/project/.wcode/skills/demo",
             frontmatterKeys: ["name", "description", "version"],
             name: "demo",
-            path: "/workspace/project/.zcode/skills/demo/SKILL.md",
-            rootPath: "/workspace/project/.zcode/skills",
+            path: "/workspace/project/.wcode/skills/demo/SKILL.md",
+            rootPath: "/workspace/project/.wcode/skills",
             safeToAutoLoad: true,
             scope: "project",
             source: "zcode",
@@ -4627,11 +4627,11 @@ test("lists skills for bare prompt skill command", async () => {
         skills: [
           {
             description: "Review React code.",
-            directory: "/workspace/project/.zcode/skills/react",
+            directory: "/workspace/project/.wcode/skills/react",
             frontmatterKeys: ["name", "description"],
             name: "react-review",
-            path: "/workspace/project/.zcode/skills/react/SKILL.md",
-            rootPath: "/workspace/project/.zcode/skills",
+            path: "/workspace/project/.wcode/skills/react/SKILL.md",
+            rootPath: "/workspace/project/.wcode/skills",
             safeToAutoLoad: true,
             scope: "project",
             source: "zcode",
@@ -4660,11 +4660,11 @@ test("lists skills in JSON format", async () => {
         skills: [
           {
             description: "Review React code.",
-            directory: "/workspace/project/.zcode/skills/react",
+            directory: "/workspace/project/.wcode/skills/react",
             frontmatterKeys: ["name", "description", "when_to_use"],
             name: "react-review",
-            path: "/workspace/project/.zcode/skills/react/SKILL.md",
-            rootPath: "/workspace/project/.zcode/skills",
+            path: "/workspace/project/.wcode/skills/react/SKILL.md",
+            rootPath: "/workspace/project/.wcode/skills",
             safeToAutoLoad: true,
             scope: "project",
             source: "zcode",
@@ -6487,7 +6487,7 @@ test("headless prompt reports exact Workspace Hook pretrust diagnostics without 
           event: "SessionStart",
           matcher: null,
           displayCommand: "./start.sh",
-          sourcePath: ".zcode/config.json",
+          sourcePath: ".wcode/config.json",
           configuredEnabled: true,
           hookDeclarationDigest: "a".repeat(64),
           trustState: "pending_trust",

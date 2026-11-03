@@ -2,7 +2,7 @@
  * 沙箱子进程的 **spawn 策略**契约（`RunWorkflowOptions.childSpawn`）。
  *
  * 2026-09-09 追记（docs/dynamic-workflow/launch.md）之后，payload 不再过命令行：harness 先把
- * 入口文件写到 `<cwd>/.zcode/workflow-runs/<runId>.mjs`，argv 只剩路径。
+ * 入口文件写到 `<cwd>/.wcode/workflow-runs/<runId>.mjs`，argv 只剩路径。
  *   - 缺省策略：`node --max-old-space-size=… <entry>`（没有 `--input-type` / `--eval`）；
  *   - SEA（bug 根因见同一 spec 的「SEA 子命令」）：SEA 单文件二进制**不解释 Node CLI 旗标**，
  *     故 harness 允许调用方（bootstrap，只在 SEA 下）改用 `childSpawn.argsPrefix`：
@@ -126,7 +126,7 @@ describe("sandbox child spawn strategy", () => {
     const args = spawnCalls[0]!.args;
 
     // 命令行上只有旗标与路径——payload 与子进程源码都不在这里（Windows 32,767 字符上限）。
-    expect(args).toEqual(["--max-old-space-size=256", join(cwd, ".zcode", "workflow-runs", "run.mjs")]);
+    expect(args).toEqual(["--max-old-space-size=256", join(cwd, ".wcode", "workflow-runs", "run.mjs")]);
     await expect(readEntryPayload(args[1]!)).resolves.toMatchObject({ lowered: expect.any(String) });
     expect(spawnCalls[0]!.options.env).toMatchObject({ ELECTRON_RUN_AS_NODE: "1" });
     expect(spawnCalls[0]!.options.cwd).toBe(cwd);
@@ -150,7 +150,7 @@ describe("sandbox child spawn strategy", () => {
     });
 
     expect(settlement).toEqual({ status: "completed", artifact: "hi" });
-    const payload = await readEntryPayload(join(cwd, ".zcode", "workflow-runs", "run.mjs"));
+    const payload = await readEntryPayload(join(cwd, ".wcode", "workflow-runs", "run.mjs"));
     // 过界的那一个还在：这条断言让「全都没过界」不能靠一个空 payload 蒙混过去。
     expect(payload.args).toEqual({ topic: "release" });
     for (const field of ["launch", "resumedFrom", "toolCallId", "parentSessionId", "name"]) {
@@ -173,7 +173,7 @@ describe("sandbox child spawn strategy", () => {
     expect(settlement).toEqual({ status: "completed", artifact: "hi" });
     expect(spawnCalls).toHaveLength(1);
     const args = spawnCalls[0]!.args;
-    expect(args).toEqual([standIn, join(cwd, ".zcode", "workflow-runs", "run.mjs")]);
+    expect(args).toEqual([standIn, join(cwd, ".wcode", "workflow-runs", "run.mjs")]);
     // 一个旗标都不许漏出去——SEA 主程序会把它们当未知参数而报错退出。
     expect(args.some((arg) => arg.startsWith("--"))).toBe(false);
     // 堆上限只能随 payload 走（argsPrefix 路上没有旗标可传），由入口文件 best-effort 施加。

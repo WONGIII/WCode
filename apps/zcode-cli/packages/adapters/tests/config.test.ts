@@ -18,11 +18,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 describe("config adapters", () => {
-  it.each(["zcode.json", ".zcode/config.json", "explicit-project.json"])(
+  it.each(["zcode.json", ".wcode/config.json", "explicit-project.json"])(
     "restricts project runtime parameters while retaining extension settings in %s",
     async (fileName) => {
       const root = await mkdtemp(join(tmpdir(), "zcode-project-runtime-boundary-"));
-      const userPath = join(root, ".zcode", "cli", "config.json");
+      const userPath = join(root, ".wcode", "cli", "config.json");
       const projectPath = join(root, fileName);
       const skillPath = join(root, "skills", "demo", "SKILL.md");
       const commandPath = join(root, "commands", "demo.md");
@@ -74,7 +74,7 @@ describe("config adapters", () => {
         vi.stubEnv("HOME", root);
         vi.stubEnv("USERPROFILE", root);
         await mkdir(join(root, ".git"));
-        await mkdir(join(root, ".zcode", "cli"), { recursive: true });
+        await mkdir(join(root, ".wcode", "cli"), { recursive: true });
         await writeFile(userPath, JSON.stringify(userConfig));
         await writeFile(projectPath, JSON.stringify(projectConfig));
         const baseline = createConfig({ env: {}, userConfigPath: userPath });
@@ -303,10 +303,10 @@ describe("config adapters", () => {
   it("deep merges Workspace Plugin enablement and options over User config", async () => {
     const dir = await mkdtemp(join(tmpdir(), "zcode-config-workspace-plugins-"));
     const userPath = join(dir, "user.json");
-    const workspacePath = join(dir, ".zcode", "config.json");
+    const workspacePath = join(dir, ".wcode", "config.json");
 
     try {
-      await mkdir(join(dir, ".zcode"), { recursive: true });
+      await mkdir(join(dir, ".wcode"), { recursive: true });
       await writeFile(
         userPath,
         JSON.stringify({
@@ -383,14 +383,14 @@ describe("config adapters", () => {
     }
   });
 
-  it.each(["zcode.json", ".zcode/config.json", "explicit-project.json"])(
+  it.each(["zcode.json", ".wcode/config.json", "explicit-project.json"])(
     "ignores plugin directories from project config %s",
     async (fileName) => {
       const dir = await mkdtemp(join(tmpdir(), "zcode-project-plugin-dirs-"));
       const projectConfigPath = join(dir, fileName);
       try {
         await mkdir(join(dir, ".git"));
-        await mkdir(join(dir, ".zcode"));
+        await mkdir(join(dir, ".wcode"));
         await writeFile(
           projectConfigPath,
           JSON.stringify({ plugins: { dirs: ["./plugin", join(dir, "absolute-plugin")] } }),
@@ -1448,7 +1448,7 @@ describe("config adapters", () => {
   it("merges project configs from root to cwd with nearest config winning", async () => {
     const root = await mkdtemp(join(tmpdir(), "zcode-project-config-"));
     const cwd = join(root, "packages", "app");
-    const cwdConfigDir = join(cwd, ".zcode");
+    const cwdConfigDir = join(cwd, ".wcode");
 
     try {
       await mkdir(join(root, ".git"));
@@ -1693,7 +1693,7 @@ describe("config adapters", () => {
 
     try {
       await mkdir(join(root, ".git"));
-      await mkdir(join(root, ".zcode"), { recursive: true });
+      await mkdir(join(root, ".wcode"), { recursive: true });
       await writeFile(
         join(root, "zcode.json"),
         JSON.stringify({
@@ -1711,7 +1711,7 @@ describe("config adapters", () => {
         }),
       );
       await writeFile(
-        join(root, ".zcode", "config.json"),
+        join(root, ".wcode", "config.json"),
         JSON.stringify({
           hooks: {
             enabled: true,
@@ -1739,7 +1739,7 @@ describe("config adapters", () => {
           (diagnostic) => diagnostic.code === "config_project_hooks_pending_trust",
         ),
       ).toHaveLength(2);
-      for (const configPath of [join(root, "zcode.json"), join(root, ".zcode", "config.json")]) {
+      for (const configPath of [join(root, "zcode.json"), join(root, ".wcode", "config.json")]) {
         expect(result.sources.project.diagnostics).toContainEqual(
           expect.objectContaining({
             code: "config_project_hooks_pending_trust",
@@ -1763,7 +1763,7 @@ describe("config adapters", () => {
 
     try {
       await mkdir(join(root, ".git"));
-      await mkdir(join(root, ".zcode"), { recursive: true });
+      await mkdir(join(root, ".wcode"), { recursive: true });
       await writeFile(
         userConfigPath,
         JSON.stringify({
@@ -1781,7 +1781,7 @@ describe("config adapters", () => {
         }),
       );
       await writeFile(
-        join(root, ".zcode", "config.json"),
+        join(root, ".wcode", "config.json"),
         JSON.stringify({
           hooks: {
             enabled: true,

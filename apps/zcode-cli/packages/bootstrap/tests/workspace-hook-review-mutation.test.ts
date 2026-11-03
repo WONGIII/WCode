@@ -21,8 +21,8 @@ function makeWorkspace(): { workspace: string; configPath: string } {
   const workspace = mkdtempSync(join(tmpdir(), "workspace-hook-review-mutation-"));
   roots.push(workspace);
   mkdirSync(join(workspace, ".git"));
-  const configPath = join(workspace, ".zcode", "config.json");
-  mkdirSync(join(workspace, ".zcode"));
+  const configPath = join(workspace, ".wcode", "config.json");
+  mkdirSync(join(workspace, ".wcode"));
   writeFileSync(
     configPath,
     `${JSON.stringify(

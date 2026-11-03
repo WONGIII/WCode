@@ -3,9 +3,9 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// 协议 handler 只从 workspace 推导 storageRoot，user config 仍解析到 ~/.zcode/cli/config.json
+// 协议 handler 只从 workspace 推导 storageRoot，user config 仍解析到 ~/.wcode/cli/config.json
 // （getDefaultConfigPath 无 env 覆盖）。为隔离 restore/overview 的 user-config 往返，把 node:os
-// 的 homedir 重定向到一次性临时目录；tmpdir 等其余实现保留原值。这样 resolvePath("~/.zcode/cli")
+// 的 homedir 重定向到一次性临时目录；tmpdir 等其余实现保留原值。这样 resolvePath("~/.wcode/cli")
 // 落到隔离目录，绝不触碰真实 HOME。
 // 回归原因：vi.mock 会提升到普通 const 初始化之前；临时 HOME 也必须通过 vi.hoisted
 // 提前建立，否则 mock factory 读取 FAKE_HOME 时会命中 TDZ，导致整个 suite 无法收集。
@@ -272,7 +272,7 @@ describe("plugins protocol contracts", () => {
     const pluginRoot = join(root, "plugins", "workspace-demo");
     try {
       await writeTestFile(
-        join(root, ".zcode", "config.json"),
+        join(root, ".wcode", "config.json"),
         JSON.stringify({ plugins: { dirs: [pluginRoot], enabledPlugins: { "workspace-demo@inline": false } } }),
       );
       await writeTestFile(
@@ -303,7 +303,7 @@ describe("plugins protocol contracts", () => {
   it("keeps the User projection independent from Workspace enable overrides", async () => {
     const root = await mkdtemp(join(tmpdir(), "zcode-plugin-config-view-"));
     const pluginId = "skill-creator@zcode-plugins-official";
-    const userConfigPath = join(FAKE_HOME, ".zcode", "cli", "config.json");
+    const userConfigPath = join(FAKE_HOME, ".wcode", "cli", "config.json");
     try {
       await writeTestFile(
         userConfigPath,
@@ -312,7 +312,7 @@ describe("plugins protocol contracts", () => {
         }),
       );
       await writeTestFile(
-        join(root, ".zcode", "config.json"),
+        join(root, ".wcode", "config.json"),
         JSON.stringify({
           plugins: { enabledPlugins: { [pluginId]: false } },
         }),
@@ -355,7 +355,7 @@ describe("plugins protocol contracts", () => {
     const root = await mkdtemp(join(tmpdir(), "zcode-plugin-option-source-view-"));
     const pluginRoot = join(root, "user-plugin");
     const pluginId = "option-source-view@inline";
-    const userConfigPath = join(FAKE_HOME, ".zcode", "cli", "config.json");
+    const userConfigPath = join(FAKE_HOME, ".wcode", "cli", "config.json");
     try {
       await writeTestFile(
         join(pluginRoot, ".claude-plugin", "plugin.json"),
@@ -396,7 +396,7 @@ describe("plugins protocol contracts", () => {
     const pluginId = "missing-fixture@personal-market";
     try {
       await writeTestFile(
-        join(root, ".zcode", "config.json"),
+        join(root, ".wcode", "config.json"),
         JSON.stringify({
           plugins: { enabledPlugins: { [pluginId]: true } },
         }),
@@ -642,11 +642,11 @@ describe("updatePlugin handler diagnostics", () => {
 // restoreBuiltinPlugin / overview 走真实 bootstrap 路径：storageRoot 由 ZCODE_STORAGE_DIR
 // 锚定（storage.dir 以 "cli" 结尾时 getCliStorageRoot 原样返回，pluginStorageRoot =
 // <storageDir>/plugins）；suppressedBuiltins 必须写到 handler 实际解析的 user config，即
-// ~/.zcode/cli/config.json（文件头部已把 homedir 重定向到 FAKE_HOME，故落在隔离目录）。
+// ~/.wcode/cli/config.json（文件头部已把 homedir 重定向到 FAKE_HOME，故落在隔离目录）。
 describe("restoreBuiltinPlugin handler", () => {
   const noopContext = {} as unknown as ZCodeProtocolAgentServerContext;
   const builtinId = "skill-creator@zcode-plugins-official";
-  const userConfigPath = join(FAKE_HOME, ".zcode", "cli", "config.json");
+  const userConfigPath = join(FAKE_HOME, ".wcode", "cli", "config.json");
   let previousStorageDir: string | undefined;
 
   beforeEach(() => {

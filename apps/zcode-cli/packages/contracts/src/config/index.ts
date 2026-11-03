@@ -300,7 +300,7 @@ export const DefaultRuntimeConfig: RuntimeConfig = {
   },
   storage: {
     dir: "~/.zcode",
-    sessionDbPath: "~/.zcode/cli/db/db.sqlite",
+    sessionDbPath: "~/.wcode/cli/db/db.sqlite",
   },
   network: {
     timeout: 180000,

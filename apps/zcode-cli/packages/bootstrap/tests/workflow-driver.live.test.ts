@@ -4,7 +4,7 @@
  *
  * 如何运行：
  *   ZCODE_WORKFLOW_LIVE_TEST=1 pnpm --filter @zcode/bootstrap exec vitest run tests/workflow-driver.live.test.ts
- * 凭据与模型直接取自本机 v2 配置（~/.zcode/v2/config.json + setting.json）里活跃的 provider——见
+ * 凭据与模型直接取自本机 v2 配置（~/.wcode/v2/config.json + setting.json）里活跃的 provider——见
  * resolveV2ModelConfig。无需额外 env（可选 ZCODE_WORKFLOW_LIVE_MODEL 覆盖模型 id）。若本机无 v2
  * 配置或活跃 provider 无内联 apiKey，则整块跳过。
  *
@@ -29,9 +29,9 @@ import { fakeFileSystemPort, runDriverScript, type PlannedResponse } from "./wor
 import type { ActorRuntimeFactory } from "../src/app/workflow-driver.js";
 
 /**
- * 直接读取本机 v2 配置（~/.zcode/v2/config.json + setting.json）解析出活跃 provider 的凭据与模型，
+ * 直接读取本机 v2 配置（~/.wcode/v2/config.json + setting.json）解析出活跃 provider 的凭据与模型，
  * 构造 RuntimeModelConfig 注入 createModelAdapter —— 镜像生产里桌面经协议下发 bootstrapModelConfig
- * 的做法。CLI 的 createConfig 只读已废弃的 v1 ~/.zcode/cli/config.json，不认 v2 provider map（v2 的
+ * 的做法。CLI 的 createConfig 只读已废弃的 v1 ~/.wcode/cli/config.json，不认 v2 provider map（v2 的
  * 原生解析在桌面 @zcode/services，按协议边界不被 CLI 依赖），所以这里让 live 测试自解析 v2 并注入
  * modelConfig，而不是依赖那条会落到 v1 空配置的 fallback。测试专用，只读不写，绝不落盘或打印密钥。
  * 可用 ZCODE_WORKFLOW_LIVE_MODEL 覆盖模型 id。
@@ -43,7 +43,7 @@ interface ResolvedLiveModel {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function resolveV2ModelConfig(): ResolvedLiveModel | undefined {
-  const configPath = join(homedir(), ".zcode", "v2", "config.json");
+  const configPath = join(homedir(), ".wcode", "v2", "config.json");
   if (!existsSync(configPath)) return undefined;
   let providers: Record<string, any>;
   try {
@@ -67,7 +67,7 @@ function resolveV2ModelConfig(): ResolvedLiveModel | undefined {
 /** 活跃 provider：优先 setting.json 的 family 选择，否则取 enabled 且带 apiKey 的第一个。 */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function pickActiveProviderId(providers: Record<string, any>): string | undefined {
-  const settingPath = join(homedir(), ".zcode", "v2", "setting.json");
+  const settingPath = join(homedir(), ".wcode", "v2", "setting.json");
   if (existsSync(settingPath)) {
     try {
       const s = JSON.parse(readFileSync(settingPath, "utf8"));

@@ -171,15 +171,21 @@ async function readPersistedSessionCumulativeUsage(
     return undefined;
   }
   try {
-    const usage = await store.queryTaskUsage({
-      sessionID: sessionId as Parameters<typeof store.queryTaskUsage>[0]["sessionID"],
+    // 必须用 queryModelUsageTurns 自己求和，不能用 queryTaskUsage：
+    // 后者按 query_source 做 input 基线扣减，返回的是「本期增量」（实测同一会话
+    // 真实 input 311M 时它只返回 5.4M），拿它当累计种子会把总量显示成几万。
+    const turns = await store.queryModelUsageTurns({
+      sessionID: sessionId as Parameters<typeof store.queryModelUsageTurns>[0]["sessionID"],
     });
-    const cumulative = {
-      inputTokens: usage.inputTokens,
-      outputTokens: usage.outputTokens,
-      cacheReadTokens: usage.cacheReadTokens,
-      cacheWriteTokens: usage.cacheCreationTokens,
-    };
+    const cumulative = turns.reduce(
+      (acc, turn) => ({
+        inputTokens: acc.inputTokens + turn.inputTokens,
+        outputTokens: acc.outputTokens + turn.outputTokens,
+        cacheReadTokens: acc.cacheReadTokens + turn.cacheReadTokens,
+        cacheWriteTokens: acc.cacheWriteTokens + turn.cacheCreationTokens,
+      }),
+      { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 },
+    );
     // 全 0 视为没有历史用量，不制造假种子。
     const hasAny =
       cumulative.inputTokens > 0 ||

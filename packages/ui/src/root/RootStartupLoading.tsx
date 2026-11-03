@@ -40,7 +40,8 @@ export function ZCodeStartupLogoBadge({
         // 深色主题下白底仍可辨识，因此边框用中性灰而非白色叠加。
         "relative flex items-center justify-center bg-[#ffffff] text-[#000000] before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:border before:border-[rgba(0,0,0,0.08)] before:content-['']",
         size === "titlebar"
-          ? "size-5 rounded shadow-sm/20 before:border-black/15"
+          ? // 标题栏/侧边栏这个尺寸很小，投影在白底上会糊成一圈灰边，去掉投影只留描边。
+            "size-5 rounded before:border-black/15"
           : "size-24 rounded-3xl shadow-xl/20",
       )}
     >

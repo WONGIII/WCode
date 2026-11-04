@@ -11,6 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
+import darkEmptyStateLogoUrl from "@/assets/WEmptyStateDark.svg";
 import { cn } from "@/components/lib/utils.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
@@ -241,45 +242,63 @@ export function ConversationDraftEmptyState({
 }
 
 function ZCodeEmptyStateLogo({ className }: { className?: string }) {
-  // 修复原因：原先深色态使用 assets/Z.svg 位图作为背景，该资源的渐变是
-  // #444/#2A2A2A 深灰，落在深色底上几乎不可见。这里统一用 currentColor
-  // 线框，交由 text-foreground-subtlest 随主题取色，两套主题共用同一形状。
   return (
-    <svg
-      aria-hidden="true"
-      className={cn(
-        className,
-        "opacity-70",
-        "[-webkit-mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
-        "[-webkit-mask-repeat:no-repeat] [-webkit-mask-size:100%_100%]",
-        "[mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
-        "[mask-repeat:no-repeat] [mask-size:100%_100%]",
-      )}
-      width="400"
-      height="250"
-      viewBox="0 0 400 250"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {/* 品牌字形从 Z 换成 W。W 的 bbox 是 710x435，按容器 88% 宽度等比缩放后居中。 */}
-      <g transform="translate(24 17.17) scale(0.49577) translate(-157 -294)">
-        <path
-          d="M 267.00 294.00 L 267.00 294.00 L 349.31 532.68 L 294.30 692.19 L 157.00 294.00 Z"
-          stroke="currentColor"
-        />
-        <path
-          d="M 307.00 729.00 L 307.00 729.00 L 444.30 330.81 L 499.31 490.32 L 417.00 729.00 Z"
-          stroke="currentColor"
-        />
-        <path
-          d="M 567.00 294.00 L 567.00 294.00 L 649.31 532.68 L 594.30 692.19 L 457.00 294.00 Z"
-          stroke="currentColor"
-        />
-        <path
-          d="M 607.00 729.00 L 607.00 729.00 L 757.00 294.00 L 867.00 294.00 L 717.00 729.00 Z"
-          stroke="currentColor"
-        />
-      </g>
-    </svg>
+    <>
+      {/* 浅色沿用 ZCode 原版内联线框：单条 currentColor 描边 + 底部渐隐遮罩。 */}
+      <svg
+        aria-hidden="true"
+        className={cn(
+          className,
+          "opacity-70 dark:hidden",
+          "[-webkit-mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
+          "[-webkit-mask-repeat:no-repeat] [-webkit-mask-size:100%_100%]",
+          "[mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
+          "[mask-repeat:no-repeat] [mask-size:100%_100%]",
+        )}
+        width="400"
+        height="250"
+        viewBox="0 0 400 250"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* 品牌字形从 Z 换成 W。W 的 bbox 是 710x435，按容器 88% 宽度等比缩放后居中。 */}
+        <g transform="translate(24 17.17) scale(0.49577) translate(-157 -294)">
+          <path
+            d="M 267.00 294.00 L 267.00 294.00 L 349.31 532.68 L 294.30 692.19 L 157.00 294.00 Z"
+            stroke="currentColor"
+          />
+          <path
+            d="M 307.00 729.00 L 307.00 729.00 L 444.30 330.81 L 499.31 490.32 L 417.00 729.00 Z"
+            stroke="currentColor"
+          />
+          <path
+            d="M 567.00 294.00 L 567.00 294.00 L 649.31 532.68 L 594.30 692.19 L 457.00 294.00 Z"
+            stroke="currentColor"
+          />
+          <path
+            d="M 607.00 729.00 L 607.00 729.00 L 757.00 294.00 L 867.00 294.00 L 717.00 729.00 Z"
+            stroke="currentColor"
+          />
+        </g>
+      </svg>
+      {/* 深色沿用 ZCode 原版做法：资源自带「模糊光晕 + 渐变描边」两层，
+          不是单层平描边。资源本身使用浅色渐变，保证在深色底上可见；
+          与浅色图形通过主题类互斥显示，避免同时占位。 */}
+      <img
+        aria-hidden="true"
+        className={cn(
+          className,
+          "hidden dark:block",
+          // 光晕资源自身只有描边渐变，叠加与浅色一致的底部渐隐，避免下缘突然截断。
+          "[-webkit-mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
+          "[-webkit-mask-repeat:no-repeat] [-webkit-mask-size:100%_100%]",
+          "[mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
+          "[mask-repeat:no-repeat] [mask-size:100%_100%]",
+        )}
+        data-v4-draft-logo="dark"
+        src={darkEmptyStateLogoUrl}
+        alt=""
+      />
+    </>
   );
 }

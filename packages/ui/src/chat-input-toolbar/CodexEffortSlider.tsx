@@ -114,10 +114,10 @@ export function CodexEffortSlider({
   // 动画状态放在 ref：每帧读写，用 state 会触发重渲染。
   const motion = useRef({ speed: 0, from: 0, target: 0, changedAt: 0, travel: 0, burstAt: 0 });
   const lastFrameAt = useRef(0);
-  const latest = useRef({ ultra, fast });
-  latest.current = { ultra, fast };
 
   const fraction = levelCount > 1 ? value / (levelCount - 1) : 0;
+  const latest = useRef({ ultra, fast, fraction });
+  latest.current = { ultra, fast, fraction };
 
   // 首次挂载时如果已经在 Ultra，不应重播「进入 Ultra」的警告。
   const previousUltra = useRef(ultra);
@@ -204,7 +204,14 @@ export function CodexEffortSlider({
       const width = canvas.width / dpr;
 
       // Fast 但未到 Ultra 时粒子只原地晃动；Ultra 且 Fast 才横向流动。
-      if ((current.ultra || current.fast) && width > 0) {
+      // 粒子必须裁剪在蓝色填充区内：填充为 0 档时该层本身透明，不能再露出粒子。
+      const fillWidth =
+        current.fraction > 0 ? (width - KNOB_SIZE) * current.fraction + KNOB_RADIUS : 0;
+      if ((current.ultra || current.fast) && fillWidth > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, fillWidth * dpr, canvas.height);
+        ctx.clip();
         for (let i = 0; i < PARTICLE_SEEDS.length; i += 1) {
           const seed = PARTICLE_SEEDS[i]!;
           const px = seed[0];
@@ -229,6 +236,7 @@ export function CodexEffortSlider({
           ctx.fillStyle = `rgba(255,255,255,${idle + (moving - idle) * speed})`;
           ctx.fill();
         }
+        ctx.restore();
       }
 
       // 进入 Ultra 的瞬间爆出一圈紫色粒子。

@@ -46,12 +46,11 @@ export function ZCodeStartupLogoBadge({
           : "size-24 rounded-3xl shadow-xl/20",
       )}
     >
-      {/* 必须按「高度」而不是宽度约束：W 的宽高比是 710:435（很扁），
-          若按宽度设 16px，字形高度只剩 9.8px、单笔画约 2px，
-          在这个尺寸下抗锯齿会把笔画糊成灰边，看起来像低分辨率图片。
-          改为高度约束后字形高约 14px，笔画约 3px，小图上才立得住。 */}
+      {/* 标题栏必须按宽度约束：W 的宽高比是 710:435（很扁），按高度 14px 渲染
+          会得到约 23px 宽，超出 20px 的白色徽标并在两侧被裁掉。改为 w-4 后
+          字形约 16×9.8，四周保留内边距，与 build 图标里的 W 比例一致。 */}
       <ZCodeStartupLogo
-        className={size === "titlebar" ? "h-3.5 w-auto" : "h-auto w-16"}
+        className={size === "titlebar" ? "h-auto w-4" : "h-auto w-16"}
         animated={animated}
       />
     </div>

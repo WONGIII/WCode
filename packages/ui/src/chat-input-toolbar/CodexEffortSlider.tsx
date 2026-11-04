@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { cn } from "@/components/lib/utils.js";
+import { ControlHintTooltip } from "@/ControlHintTooltip.js";
 import "@/chat-input-toolbar/codex-effort-slider.css";
 
 /**
@@ -106,13 +107,23 @@ export function CodexEffortSlider({
 }: CodexEffortSliderProps) {
   const railRef = useRef<HTMLDivElement | null>(null);
   const particlesRef = useRef<HTMLCanvasElement | null>(null);
-  const burstRef = useRef<HTMLCanvasElement | null>(null);
   const [dragging, setDragging] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(-1);
   const [warning, setWarning] = useState(false);
 
   // 动画状态放在 ref：每帧读写，用 state 会触发重渲染。
-  const motion = useRef({ speed: 0, from: 0, target: 0, changedAt: 0, travel: 0, burstAt: 0 });
+  const motion = useRef({
+    speed: 0,
+    from: 0,
+    target: 0,
+    changedAt: 0,
+    travel: 0,
+    // 蓝色 ↔ 紫色填充的连续混合值；粒子与填充共用同一条缓动曲线，不做硬切。
+    mix: 0,
+    mixFrom: 0,
+    mixTarget: 0,
+    mixChangedAt: 0,
+  });
   const lastFrameAt = useRef(0);
 
   const fraction = levelCount > 1 ? value / (levelCount - 1) : 0;
@@ -129,17 +140,12 @@ export function CodexEffortSlider({
     }
     if (!ultra) {
       setWarning(false);
-      motion.current.burstAt = 0;
       return;
     }
 
     setWarning(true);
-    const burstTimer = window.setTimeout(() => {
-      motion.current.burstAt = performance.now();
-    }, 220);
     const clearTimer = window.setTimeout(() => setWarning(false), 1800);
     return () => {
-      window.clearTimeout(burstTimer);
       window.clearTimeout(clearTimer);
     };
   }, [ultra]);
@@ -147,9 +153,8 @@ export function CodexEffortSlider({
   // 粒子与爆发动画循环。
   useEffect(() => {
     const canvas = particlesRef.current;
-    const burstCanvas = burstRef.current;
     const rail = railRef.current;
-    if (!canvas || !burstCanvas || !rail) {
+    if (!canvas || !rail) {
       return;
     }
 
@@ -159,8 +164,7 @@ export function CodexEffortSlider({
     }
 
     const ctx = canvas.getContext("2d");
-    const bctx = burstCanvas.getContext("2d");
-    if (!ctx || !bctx) {
+    if (!ctx) {
       return;
     }
 
@@ -185,7 +189,18 @@ export function CodexEffortSlider({
 
       const current = latest.current;
       const m = motion.current;
-      const target = current.ultra && current.fast ? 1 : 0;
+
+      // 蓝色 → 紫色：连续缓动，进入/退出 Ultra 时填充颜色和粒子速度共用同一进度。
+      const mixTarget = current.ultra ? 1 : 0;
+      if (mixTarget !== m.mixTarget) {
+        m.mixFrom = m.mix;
+        m.mixTarget = mixTarget;
+        m.mixChangedAt = now;
+      }
+      const mixProgress = Math.min(1, Math.max(0, (now - m.mixChangedAt) / 460));
+      m.mix = m.mixFrom + (m.mixTarget - m.mixFrom) * mixProgress * mixProgress * (3 - 2 * mixProgress);
+
+      const target = current.fast ? m.mix : 0;
       if (target !== m.target) {
         m.from = m.speed;
         m.target = target;
@@ -197,17 +212,16 @@ export function CodexEffortSlider({
       m.travel += delta * m.speed * PARTICLE_SPEED_SCALE;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      bctx.clearRect(0, 0, burstCanvas.width, burstCanvas.height);
 
       const t = now / 1000;
-      const speed = current.ultra ? m.speed : 0;
+      const speed = m.speed;
       const width = canvas.width / dpr;
 
       // Fast 但未到 Ultra 时粒子只原地晃动；Ultra 且 Fast 才横向流动。
       // 粒子必须裁剪在蓝色填充区内：填充为 0 档时该层本身透明，不能再露出粒子。
       const fillWidth =
         current.fraction > 0 ? (width - KNOB_SIZE) * current.fraction + KNOB_RADIUS : 0;
-      if ((current.ultra || current.fast) && fillWidth > 0) {
+      if ((current.ultra || current.fast || m.mix > 0.01) && fillWidth > 0) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(0, 0, fillWidth * dpr, canvas.height);
@@ -217,7 +231,7 @@ export function CodexEffortSlider({
           const px = seed[0];
           const py = seed[1];
           const phase = i * 2.39;
-          const offset = current.ultra ? m.travel * (145 + (i % 6) * 17) : 0;
+          const offset = m.travel * (145 + (i % 6) * 17);
           const x =
             ((((px / 346) * width - offset + Math.sin(t * 9 + phase) * 0.7 * (1 - speed)) % width) +
               width) %
@@ -237,20 +251,6 @@ export function CodexEffortSlider({
           ctx.fill();
         }
         ctx.restore();
-      }
-
-      // 进入 Ultra 的瞬间爆出一圈紫色粒子。
-      if (m.burstAt && now - m.burstAt < 520) {
-        const age = (now - m.burstAt) / 1000;
-        for (let i = 0; i < 22; i += 1) {
-          const angle = i * 2.399 + 0.18;
-          const x = 72 + Math.cos(angle) * (43 + (48 + (i % 5) * 12) * age * 2);
-          const y = 72 + Math.sin(angle) * (43 + (48 + (i % 4) * 10) * age * 2);
-          bctx.beginPath();
-          bctx.arc(x, y, (i % 6 === 0 ? 2.3 : 1.35) * 2 * (1 - age), 0, Math.PI * 2);
-          bctx.fillStyle = `rgba(165,107,233,${0.7 * (1 - age / 0.52)})`;
-          bctx.fill();
-        }
       }
 
       frame = requestAnimationFrame(draw);
@@ -313,34 +313,39 @@ export function CodexEffortSlider({
         {heading}
         {showFastBolt ? (
           <div className="mb-1.5 flex min-h-5 items-center gap-2">
-            <button
-              type="button"
-              data-testid="codex-effort-fast-toggle"
-              data-active={fast || undefined}
-              data-ultra={ultra || undefined}
-              aria-label={fastLabel}
-              aria-pressed={fast}
-              title={
-                showNoEffectNote && noEffectNote
-                  ? `${fastHint ? `${fastHint} · ` : ""}${noEffectNote}`
-                  : fastHint
-              }
-              className="codex-effort-fast flex size-6 items-center justify-center rounded-md text-foreground-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onFastChange(!fast);
-              }}
+            <ControlHintTooltip
+              title={fastHint}
+              description={showNoEffectNote ? noEffectNote : undefined}
+              standalone
+              side="top"
+              sideOffset={6}
+              // 菜单内容层级是 z-[60]，默认 tooltip 的 z-50 会被菜单盖住。
+              className="z-[70]"
             >
-              <svg
-                className="codex-effort-bolt"
+              <button
+                type="button"
+                data-testid="codex-effort-fast-toggle"
                 data-active={fast || undefined}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+                data-ultra={ultra || undefined}
+                aria-label={fastLabel}
+                aria-pressed={fast}
+                className="codex-effort-fast flex size-6 items-center justify-center rounded-md text-foreground-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onFastChange(!fast);
+                }}
               >
-                <path d="M14.4 2Q16 .2 15.8 2.5L15.1 8.5H20.5Q22 8.5 21 9.8L10.7 21.7Q9 23.4 9.2 21.2L10 14.2H4.2Q2.6 14.2 3.6 12.9L14.4 2Z" />
-              </svg>
-            </button>
+                <svg
+                  className="codex-effort-bolt"
+                  data-active={fast || undefined}
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M14.4 2Q16 .2 15.8 2.5L15.1 8.5H20.5Q22 8.5 21 9.8L10.7 21.7Q9 23.4 9.2 21.2L10 14.2H4.2Q2.6 14.2 3.6 12.9L14.4 2Z" />
+                </svg>
+              </button>
+            </ControlHintTooltip>
             {showNoEffectNote && noEffectNote ? (
               <span className="codex-effort-note min-w-0 truncate">{noEffectNote}</span>
             ) : null}
@@ -365,6 +370,7 @@ export function CodexEffortSlider({
           ref={railRef}
           data-testid="codex-effort-rail"
           data-effort={ultra ? "max" : String(value)}
+          data-ultra={ultra || undefined}
           data-fast={fast || undefined}
           data-dragging={dragging || undefined}
           data-disabled={disabled || undefined}
@@ -434,14 +440,14 @@ export function CodexEffortSlider({
             commitIndex(next);
           }}
         >
-          {/* 填充层：左端圆角、右端直角，伸到手柄正下方。 */}
+          {/* 填充层：左端圆角、右端直角，伸到手柄正下方。
+              底层固定蓝色，Ultra 渐变层通过 opacity 渐变叠加，避免蓝紫硬切。 */}
           <div
-            className={cn(
-              "codex-effort-fill absolute inset-y-0 left-0 overflow-hidden rounded-l-[16px]",
-              ultra && "codex-effort-fill-ultra",
-            )}
+            className="codex-effort-fill absolute inset-y-0 left-0 overflow-hidden rounded-l-[16px]"
             style={{ width: `calc((100% - ${KNOB_SIZE}px) * ${fraction} + ${KNOB_RADIUS}px)` }}
-          />
+          >
+            <div className="codex-effort-ultra-layer pointer-events-none absolute inset-0" />
+          </div>
 
           {/* 刻度圆点：Ultra 下隐藏，Fast 下已覆盖的圆点也隐藏。 */}
           {Array.from({ length: levelCount }, (_, index) => (
@@ -471,15 +477,6 @@ export function CodexEffortSlider({
             style={{ left: `calc((100% - ${KNOB_SIZE}px) * ${fraction})` }}
           />
 
-          {/* 爆发粒子画布：定位在手柄右上。 */}
-          <canvas
-            ref={burstRef}
-            width={144}
-            height={144}
-            className="pointer-events-none absolute -top-[13px] z-[4] h-[52px] w-[52px]"
-            style={{ left: "calc(100% - 41px)" }}
-            aria-hidden="true"
-          />
         </div>
       </div>
     </div>

@@ -96,6 +96,24 @@ export const sessionDebugSnapshotSchema = z
       })
       .strict()
       .optional(),
+    /**
+     * 全量 model_usage 聚合结果。
+     *
+     * rounds 只保留最近 200 条、且进程重启后内存快照只覆盖本次观察到的轮次，
+     * 不能代表整个会话。会话总用时、平均速度与 TTFT 的平均值必须用这份全量聚合，
+     * 否则长会话会显示成最近几轮的局部值。
+     */
+    sessionTotals: z
+      .object({
+        earliestStartedAt: count.nullable(),
+        latestCompletedAt: count.nullable(),
+        outputTokens: count,
+        generationDurationMs: count,
+        ttftTotalMs: count,
+        ttftSampleCount: count,
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 export type SessionDebugSnapshot = z.infer<typeof sessionDebugSnapshotSchema>;

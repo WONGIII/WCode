@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import type { SessionDebugNetworkEntry, SessionDebugRound } from "@zcode/shared";
+import type {
+  SessionDebugNetworkEntry,
+  SessionDebugRound,
+  SessionDebugSnapshot,
+} from "@zcode/shared";
 import { useSessionDebug } from "@/hooks/useSessionDebug.js";
 import type { ContextCumulativeTokens } from "@/chat-input-toolbar/contextUsage.js";
 
@@ -140,8 +144,9 @@ export function summarizeSessionTokenSpeed(
   rounds: readonly SessionDebugRound[],
   networkEntries: readonly SessionDebugNetworkEntry[] = [],
   now: number = Date.now(),
+  sessionTotals?: SessionDebugSnapshot["sessionTotals"],
 ): SessionTokenSpeedSummary {
-  if (rounds.length === 0) {
+  if (rounds.length === 0 && !sessionTotals) {
     return EMPTY_SUMMARY;
   }
 
@@ -176,19 +181,39 @@ export function summarizeSessionTokenSpeed(
     }
   }
 
+  // rounds 只覆盖本进程观察到的轮次（以及最近 200 条），不能代表整个会话。
+  // 会话起点、终点、输出 token 与生成时长优先取全量聚合值。
   const hasActiveRequest = hasActiveMainTurnRequest(rounds, networkEntries);
   // 生成中的轮次还没有 round 记录，用当前时刻补上末尾，让总用时连续增长而不是等结束才跳变。
-  const effectiveEnd = hasActiveRequest ? Math.max(latestEnd ?? 0, now) : latestEnd;
+  const idleEnd = Math.max(latestEnd ?? 0, sessionTotals?.latestCompletedAt ?? 0);
+  const effectiveEnd = hasActiveRequest ? Math.max(idleEnd, now) : idleEnd > 0 ? idleEnd : null;
+  const sessionStart = sessionTotals?.earliestStartedAt ?? earliestStart;
   const sessionDurationMs =
-    earliestStart !== null && effectiveEnd !== null && effectiveEnd > earliestStart
-      ? effectiveEnd - earliestStart
+    sessionStart !== null && effectiveEnd !== null && effectiveEnd > sessionStart
+      ? effectiveEnd - sessionStart
       : null;
 
+  const sessionAverage =
+    sessionTotals && sessionTotals.generationDurationMs > 0
+      ? (sessionTotals.outputTokens * 1_000) / sessionTotals.generationDurationMs
+      : null;
+  const averageTokensPerSecond =
+    sessionAverage !== null && Number.isFinite(sessionAverage) && sessionAverage > 0
+      ? sessionAverage
+      : resolveAverageTokensPerSecond(rounds);
+
+  const averageTtftMs =
+    sessionTotals && sessionTotals.ttftSampleCount > 0
+      ? sessionTotals.ttftTotalMs / sessionTotals.ttftSampleCount
+      : ttftSampleCount > 0
+        ? ttftTotal / ttftSampleCount
+        : null;
+
   return {
-    averageTokensPerSecond: resolveAverageTokensPerSecond(rounds),
-    averageTtftMs: ttftSampleCount > 0 ? ttftTotal / ttftSampleCount : null,
+    averageTokensPerSecond,
+    averageTtftMs,
     sessionDurationMs,
-    ttftSampleCount,
+    ttftSampleCount: sessionTotals?.ttftSampleCount ?? ttftSampleCount,
     hasActiveRequest,
   };
 }
@@ -212,7 +237,7 @@ export function useSessionTokenSpeed({
   taskId: string | null;
   enabled?: boolean;
 }): SessionTokenSpeedSummary {
-  const { rounds, networkEntries } = useSessionDebug({
+  const { rounds, networkEntries, sessionTotals } = useSessionDebug({
     workspacePath,
     workspaceIdentity,
     taskId,
@@ -223,8 +248,8 @@ export function useSessionTokenSpeed({
   // 避免弹窗里的「总用时」只在轮次结束时跳一下。
   const [tick, setTick] = useState(0);
   const summary = useMemo(
-    () => summarizeSessionTokenSpeed(rounds, networkEntries, Date.now()),
-    [networkEntries, rounds, tick],
+    () => summarizeSessionTokenSpeed(rounds, networkEntries, Date.now(), sessionTotals),
+    [networkEntries, rounds, sessionTotals, tick],
   );
   useEffect(() => {
     if (!summary.hasActiveRequest) {

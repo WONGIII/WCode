@@ -169,15 +169,19 @@ export function readSessionDebug(record: SessionRecord): SessionDebugSnapshot {
  * 非流式调用（标题生成等）没有 first_token_at，其 TTFT 保持 null 且不参与均值。
  */
 /**
- * 汇总会话全量累计用量。
+ * 汇总会话全量用量与耗时。
  *
- * 必须用全量而不是按 rounds 求和：rounds 有 200 条上限，长会话会严重缩水。
+ * 必须用全量而不是按 rounds 求和：rounds 有 200 条上限，且进程重启后内存
+ * 快照只覆盖本次观察到的轮次，会话总用时与均值会缩水成最近几轮。
  * 内存路径与持久化路径都需要它，因此抽成公共函数。
  */
-async function storeQueryAllTurns(
+async function storeQuerySessionTotals(
   context: ZCodeProtocolAgentServerContext,
   sessionId: string,
-): Promise<SessionDebugSnapshot["persistentCumulative"] | null> {
+): Promise<{
+  cumulative: NonNullable<SessionDebugSnapshot["persistentCumulative"]>;
+  totals: NonNullable<SessionDebugSnapshot["sessionTotals"]>;
+} | null> {
   const store = context.deps.sessionStore;
   if (!store) {
     return null;
@@ -188,15 +192,60 @@ async function storeQueryAllTurns(
   if (allTurns.length === 0) {
     return null;
   }
-  return allTurns.reduce(
-    (acc, turn) => ({
-      inputTokens: acc.inputTokens + turn.inputTokens,
-      outputTokens: acc.outputTokens + turn.outputTokens,
-      cacheReadTokens: acc.cacheReadTokens + turn.cacheReadTokens,
-      cacheWriteTokens: acc.cacheWriteTokens + turn.cacheCreationTokens,
-    }),
-    { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 },
-  );
+
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cacheReadTokens = 0;
+  let cacheWriteTokens = 0;
+  let earliestStartedAt: number | null = null;
+  let latestCompletedAt: number | null = null;
+  let streamingOutputTokens = 0;
+  let streamingGenerationMs = 0;
+  let ttftTotalMs = 0;
+  let ttftSampleCount = 0;
+
+  for (const turn of allTurns) {
+    inputTokens += turn.inputTokens;
+    outputTokens += turn.outputTokens;
+    cacheReadTokens += turn.cacheReadTokens;
+    cacheWriteTokens += turn.cacheCreationTokens;
+
+    if (Number.isFinite(turn.startedAt)) {
+      earliestStartedAt =
+        earliestStartedAt === null ? turn.startedAt : Math.min(earliestStartedAt, turn.startedAt);
+    }
+    const completedAt = turn.completedAt ?? turn.startedAt;
+    if (Number.isFinite(completedAt)) {
+      latestCompletedAt =
+        latestCompletedAt === null ? completedAt : Math.max(latestCompletedAt, completedAt);
+    }
+
+    // 与实时快照口径一致：只有真流式调用参与速度与 TTFT 均值。
+    const ttft =
+      turn.timeToFirstTokenMs !== null && Number.isFinite(turn.timeToFirstTokenMs)
+        ? turn.timeToFirstTokenMs
+        : null;
+    if (ttft === null || turn.durationMs === null || !Number.isFinite(turn.durationMs)) {
+      continue;
+    }
+    const generationMs = Math.max(0, turn.durationMs - ttft);
+    streamingOutputTokens += turn.outputTokens;
+    streamingGenerationMs += generationMs;
+    ttftTotalMs += ttft;
+    ttftSampleCount += 1;
+  }
+
+  return {
+    cumulative: { inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens },
+    totals: {
+      earliestStartedAt,
+      latestCompletedAt,
+      outputTokens: streamingOutputTokens,
+      generationDurationMs: streamingGenerationMs,
+      ttftTotalMs,
+      ttftSampleCount,
+    },
+  };
 }
 
 export async function readPersistedSessionDebug(
@@ -211,7 +260,8 @@ export async function readPersistedSessionDebug(
     sessionID: sessionId as Parameters<typeof store.queryModelUsageTurns>[0]["sessionID"],
     limit: SESSION_DEBUG_LIMITS.rounds,
   });
-  const persistentCumulative = (await storeQueryAllTurns(context, sessionId)) ?? undefined;
+  const sessionUsage = await storeQuerySessionTotals(context, sessionId);
+  const persistentCumulative = sessionUsage?.cumulative;
 
   const rounds = rows.map((row, index) => {
     const ttft =
@@ -263,6 +313,7 @@ export async function readPersistedSessionDebug(
     networkEntries: [],
     cache: null,
     persistentCumulative,
+    sessionTotals: sessionUsage?.totals,
   };
 }
 
@@ -279,9 +330,13 @@ export async function querySessionDebug(
     // 缺了它，前端累计弹窗会退回「仅容量条」的原版形态，直到用户发下一次消息
     // 触发 snapshot.usage.cumulative 才变成完整版——这正是「打开任务时弹窗不完整」的原因。
     try {
-      const allTurns = await storeQueryAllTurns(context, params.sessionId);
-      if (allTurns) {
-        return { ...live, persistentCumulative: allTurns };
+      const sessionUsage = await storeQuerySessionTotals(context, params.sessionId);
+      if (sessionUsage) {
+        return {
+          ...live,
+          persistentCumulative: sessionUsage.cumulative,
+          sessionTotals: sessionUsage.totals,
+        };
       }
     } catch {
       // 累计值取不到不影响调试快照本身。

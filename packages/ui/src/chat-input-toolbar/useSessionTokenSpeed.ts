@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { SessionDebugRound } from "@zcode/shared";
+import type { SessionDebugNetworkEntry, SessionDebugRound } from "@zcode/shared";
 import { useSessionDebug } from "@/hooks/useSessionDebug.js";
 import type { ContextCumulativeTokens } from "@/chat-input-toolbar/contextUsage.js";
 
@@ -18,6 +18,8 @@ export interface SessionTokenSpeedSummary {
   sessionDurationMs: number | null;
   /** 有效 TTFT 样本数，用于弹窗里说明均值口径。 */
   ttftSampleCount: number;
+  /** 当前是否有主轮模型请求仍在生成；为真时总用时按当前时刻实时增长。 */
+  hasActiveRequest: boolean;
 }
 
 const EMPTY_SUMMARY: SessionTokenSpeedSummary = {
@@ -25,7 +27,79 @@ const EMPTY_SUMMARY: SessionTokenSpeedSummary = {
   averageTtftMs: null,
   sessionDurationMs: null,
   ttftSampleCount: 0,
+  hasActiveRequest: false,
 };
+
+/**
+ * 是否存在尚未收到 completed / failed 的主轮请求。
+ *
+ * rounds 只包含已完成的请求，因此流式生成期间用它计算「会话总用时」会一直
+ * 停在上一次完成时刻，等本轮结束才跳变。这里从调试快照的网络事件里找
+ * 最新一次 main_turn started，并且只认晚于最后一轮完成时间的请求，
+ * 避免历史残留的 started 事件让用时无限增长。
+ */
+function hasActiveMainTurnRequest(
+  rounds: readonly SessionDebugRound[],
+  networkEntries: readonly SessionDebugNetworkEntry[],
+): boolean {
+  let latestRoundEnd = 0;
+  const startedAt = new Map<string, number>();
+  const settledAt = new Map<string, number>();
+
+  const settle = (requestId: string, at: number) => {
+    const previous = settledAt.get(requestId) ?? 0;
+    if (at > previous) {
+      settledAt.set(requestId, at);
+    }
+  };
+
+  for (const round of rounds) {
+    if (!Number.isFinite(round.recordedAt)) {
+      continue;
+    }
+    settle(round.requestId, round.recordedAt);
+    latestRoundEnd = Math.max(latestRoundEnd, round.recordedAt);
+  }
+
+  for (const entry of networkEntries) {
+    if (
+      entry.statusType === "model_request_completed" ||
+      entry.statusType === "model_request_failed"
+    ) {
+      if (entry.requestId) {
+        settle(entry.requestId, entry.recordedAt);
+      }
+      continue;
+    }
+    if (entry.statusType !== "model_request_started") {
+      continue;
+    }
+    if (entry.querySource !== undefined && entry.querySource !== "main_turn") {
+      continue;
+    }
+    if (!entry.requestId) {
+      continue;
+    }
+    // 重试会以同一个 requestId 再次 started；只保留最后一次开始时间，
+    // 这样「失败 → 重试」不会因为先前的 failed 事件被误判为已结束。
+    const previous = startedAt.get(entry.requestId) ?? 0;
+    if (entry.recordedAt > previous) {
+      startedAt.set(entry.requestId, entry.recordedAt);
+    }
+  }
+
+  for (const [requestId, started] of startedAt) {
+    if (started <= (settledAt.get(requestId) ?? 0)) {
+      continue;
+    }
+    // 历史残留的 started（请求被取消且没有终态事件）不能被当作仍在生成：
+    // 后续任何一轮已完成就说明它早已过期。
+    if (started > latestRoundEnd) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /**
  * 全会话平均速度：总输出 token / 总生成耗时。
@@ -64,6 +138,8 @@ function resolveAverageTokensPerSecond(rounds: readonly SessionDebugRound[]): nu
 
 export function summarizeSessionTokenSpeed(
   rounds: readonly SessionDebugRound[],
+  networkEntries: readonly SessionDebugNetworkEntry[] = [],
+  now: number = Date.now(),
 ): SessionTokenSpeedSummary {
   if (rounds.length === 0) {
     return EMPTY_SUMMARY;
@@ -100,9 +176,12 @@ export function summarizeSessionTokenSpeed(
     }
   }
 
+  const hasActiveRequest = hasActiveMainTurnRequest(rounds, networkEntries);
+  // 生成中的轮次还没有 round 记录，用当前时刻补上末尾，让总用时连续增长而不是等结束才跳变。
+  const effectiveEnd = hasActiveRequest ? Math.max(latestEnd ?? 0, now) : latestEnd;
   const sessionDurationMs =
-    earliestStart !== null && latestEnd !== null && latestEnd > earliestStart
-      ? latestEnd - earliestStart
+    earliestStart !== null && effectiveEnd !== null && effectiveEnd > earliestStart
+      ? effectiveEnd - earliestStart
       : null;
 
   return {
@@ -110,6 +189,7 @@ export function summarizeSessionTokenSpeed(
     averageTtftMs: ttftSampleCount > 0 ? ttftTotal / ttftSampleCount : null,
     sessionDurationMs,
     ttftSampleCount,
+    hasActiveRequest,
   };
 }
 
@@ -132,14 +212,29 @@ export function useSessionTokenSpeed({
   taskId: string | null;
   enabled?: boolean;
 }): SessionTokenSpeedSummary {
-  const { rounds } = useSessionDebug({
+  const { rounds, networkEntries } = useSessionDebug({
     workspacePath,
     workspaceIdentity,
     taskId,
     enabled,
   });
 
-  return useMemo(() => summarizeSessionTokenSpeed(rounds), [rounds]);
+  // 生成期间调试快照每秒才刷新一次；额外用本地时钟推进总用时，
+  // 避免弹窗里的「总用时」只在轮次结束时跳一下。
+  const [tick, setTick] = useState(0);
+  const summary = useMemo(
+    () => summarizeSessionTokenSpeed(rounds, networkEntries, Date.now()),
+    [networkEntries, rounds, tick],
+  );
+  useEffect(() => {
+    if (!summary.hasActiveRequest) {
+      return;
+    }
+    const timer = window.setInterval(() => setTick((value) => value + 1), 500);
+    return () => window.clearInterval(timer);
+  }, [summary.hasActiveRequest]);
+
+  return summary;
 }
 
 /**

@@ -1,4 +1,8 @@
-import { createModelUsageSummaryFromEvents } from "../deps.js";
+import {
+  SESSION_ENTRY_CONTEXT_USAGE_BREAKDOWN,
+  type ContextUsageBreakdownItem,
+} from "@zcode/contracts";
+import { createModelUsageSummaryFromEvents, traceContextToLogContext } from "../deps.js";
 import type { MessageId, MessageWithParts, Model, ModelUsage, TraceContext } from "../deps.js";
 import type { MainTurnCacheHitAggregate, RuntimeModelTextResult } from "../types.js";
 import type { AgentRuntimeInternal } from "../internal.js";
@@ -56,6 +60,59 @@ export function querySourceForTask(taskType: AgentRuntimeInternal["config"]["tas
   if (taskType === "workflow_child" || taskType === "nested_workflow_child")
     return "workflow_child";
   return "main_turn";
+}
+
+interface PersistedContextUsageBreakdownEntry {
+  breakdown: ContextUsageBreakdownItem[];
+  used: number;
+  contextWindow?: number;
+}
+
+/**
+ * 持久化最近一次主轮请求的 context 来源占比。
+ *
+ * ModelComplete 只存在于进程内 eventStore，冷启动后 `resolveSessionContextUsage`
+ * 拿不到 breakdown，上下文弹窗在发消息前只剩总量和缓存命中率。
+ * 这里把 breakdown 连同当时的 used/size 一起写成 session entry，
+ * 冷恢复时会用 used/size 对齐校验，避免把旧分支或压缩前的比例挂到当前窗口上。
+ */
+export async function persistContextUsageBreakdown(
+  runtime: AgentRuntimeInternal,
+  input: {
+    breakdown: ContextUsageBreakdownItem[] | undefined;
+    contextWindow: number | undefined;
+    used: number | undefined;
+    traceContext: TraceContext;
+  },
+): Promise<void> {
+  const { breakdown, contextWindow, used, traceContext } = input;
+  if (!runtime.sessionStore?.saveSessionEntry) return;
+  if (!breakdown || breakdown.length === 0 || used === undefined || used <= 0) return;
+
+  const timestamp = Date.now();
+  try {
+    await runtime.sessionStore.saveSessionEntry({
+      id: `${runtime.sessionId}:runtime-context-usage-breakdown`,
+      sessionID: runtime.sessionId,
+      type: SESSION_ENTRY_CONTEXT_USAGE_BREAKDOWN,
+      // 展示偏好快照不是用户活动，不能刷新会话活跃时间。
+      touchSession: false,
+      time: { created: timestamp, updated: timestamp },
+      data: {
+        breakdown,
+        used,
+        ...(contextWindow !== undefined && contextWindow > 0 ? { contextWindow } : {}),
+      } satisfies PersistedContextUsageBreakdownEntry,
+    });
+  } catch (error) {
+    runtime.logger?.warn("Failed to persist context usage breakdown", {
+      ...traceContextToLogContext(traceContext),
+      errorMessage: error instanceof Error ? error.message : String(error),
+      event: "context_usage.breakdown.persist_failed",
+      module: "core.runtime",
+      status: "failed",
+    });
+  }
 }
 
 export function findLatestCommittedAssistantUsage(

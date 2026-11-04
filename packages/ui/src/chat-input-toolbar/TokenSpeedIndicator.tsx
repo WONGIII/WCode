@@ -16,14 +16,8 @@ const SECONDS_PER_MINUTE = 60;
 const MINUTES_PER_HOUR = 60;
 
 /** 速度保留 1 位小数；整数时不显示多余的小数点。 */
-export function formatTokensPerSecondLabel(
-  tokensPerSecond: number | null,
-): string | null {
-  if (
-    tokensPerSecond === null ||
-    !Number.isFinite(tokensPerSecond) ||
-    tokensPerSecond <= 0
-  ) {
+export function formatTokensPerSecondLabel(tokensPerSecond: number | null): string | null {
+  if (tokensPerSecond === null || !Number.isFinite(tokensPerSecond) || tokensPerSecond <= 0) {
     return null;
   }
 
@@ -59,10 +53,7 @@ export function formatDurationFromMs(
 
   const hours = Math.floor(totalMinutes / MINUTES_PER_HOUR);
   const minutes = totalMinutes % MINUTES_PER_HOUR;
-  return intl.formatMessage(
-    { id: "chat.tokenSpeed.duration.hours" },
-    { hours, minutes },
-  );
+  return intl.formatMessage({ id: "chat.tokenSpeed.duration.hours" }, { hours, minutes });
 }
 
 function SpeedRows({
@@ -109,9 +100,7 @@ function SpeedRows({
         </span>
       </div>
       {sampleLabel ? (
-        <div className="text-right text-ui-sm text-foreground-subtlest">
-          {sampleLabel}
-        </div>
+        <div className="text-right text-ui-sm text-foreground-subtlest">{sampleLabel}</div>
       ) : null}
       <div className="flex items-center justify-between gap-3 border-t border-border pt-2 text-ui-sm">
         <span className="text-foreground-subtle">
@@ -147,17 +136,14 @@ export function ChatTokenSpeedIndicator({
     workspaceIdentity,
     taskId,
   });
-  const speedLabel = formatTokensPerSecondLabel(summary.latestTokensPerSecond);
+  const speedLabel = formatTokensPerSecondLabel(summary.averageTokensPerSecond);
 
   // 没有速度样本时不占位，避免新会话出现空壳。
   if (!speedLabel) {
     return null;
   }
 
-  const triggerLabel = intl.formatMessage(
-    { id: "chat.tokenSpeed.trigger" },
-    { speed: speedLabel },
-  );
+  const triggerLabel = intl.formatMessage({ id: "chat.tokenSpeed.trigger" }, { speed: speedLabel });
 
   return (
     <Context maxTokens={1} usedTokens={0}>

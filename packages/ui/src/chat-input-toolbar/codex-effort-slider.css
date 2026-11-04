@@ -1,9 +1,8 @@
-
 /*
  * Codex 风格推理档位滑块的视觉层。
  *
- * 全部类名以 codex-effort- 前缀隔离，只在 CodexEffortSlider 组件内使用，
- * 不影响默认（未启用）的原生 range 滑块。
+ * 全部类名以 codex-effort- 前缀隔离，只在 CodexEffortSlider 组件内使用；
+ * 未开启 Codex 模式时不会命中任何选择器，原有原生 range 滑块完全不受影响。
  */
 
 .codex-effort-rail {
@@ -16,6 +15,10 @@
 
 .codex-effort-rail[data-dragging] {
   cursor: grabbing;
+}
+
+.codex-effort-rail[data-disabled] {
+  cursor: default;
 }
 
 .codex-effort-rail:focus-visible {
@@ -63,13 +66,7 @@
   filter: blur(5px);
   opacity: 0.9;
   mask-image: linear-gradient(90deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent 0%,
-    #000 22%,
-    #000 78%,
-    transparent 100%
-  );
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
 }
 
 .codex-effort-fill-ultra::before {
@@ -122,7 +119,7 @@
   transition-delay: 0s;
 }
 
-.codex-effort-rail[data-fast="true"] .codex-effort-dot[data-covered] {
+.codex-effort-rail[data-fast] .codex-effort-dot[data-covered] {
   opacity: 0;
   transition-delay: 0s;
 }
@@ -136,7 +133,8 @@
     opacity 250ms ease;
 }
 
-.codex-effort-rail[data-effort="max"] .codex-effort-sparks {
+.codex-effort-rail[data-effort="max"] .codex-effort-sparks,
+.codex-effort-rail[data-fast] .codex-effort-sparks {
   opacity: 1;
 }
 
@@ -156,7 +154,15 @@
   transform: scale(1.08);
 }
 
-/* Fast 闪电按钮 */
+/* Fast 闪电按钮：默认描边，激活后实心；Ultra 时转为紫色。 */
+.codex-effort-fast[data-active] {
+  color: #3988f6;
+}
+
+.codex-effort-fast[data-active][data-ultra] {
+  color: #9c4ce3;
+}
+
 .codex-effort-bolt {
   width: 15px;
   height: 17px;
@@ -167,12 +173,12 @@
   stroke-linejoin: round;
 }
 
-.codex-effort-bolt[data-active="true"] {
+.codex-effort-bolt[data-active] {
   fill: currentColor;
   stroke-width: 0.7;
 }
 
-/* "无实际作用" 说明 */
+/* 「无实际作用」说明 */
 .codex-effort-note {
   font-size: 11px;
   line-height: 16px;
@@ -206,6 +212,22 @@
   to {
     background-position: 0% 0;
   }
+}
+
+/* 菜单标题与输入框触发器：最高档的档位文案转紫色，与 Codex 一致。 */
+.codex-effort-heading[data-ultra],
+.codex-effort-trigger-effort[data-ultra] {
+  color: #9c4ce3;
+}
+
+.codex-effort-trigger-bolt {
+  width: 12px;
+  height: 14px;
+  flex: none;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 0.7;
+  stroke-linejoin: round;
 }
 
 @media (prefers-reduced-motion: reduce) {

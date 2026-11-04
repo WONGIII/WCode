@@ -10,7 +10,7 @@ export function ComposerEffortHeading({
   label: string;
   value: string;
   shortcut?: string;
-  /** Codex 模式下最高档用紫色强调，非 Codex 模式忽略此标记。 */
+  /** Codex 模式下最高档用紫色强调；非 Codex 模式不传。 */
   ultra?: boolean;
 }) {
   return (

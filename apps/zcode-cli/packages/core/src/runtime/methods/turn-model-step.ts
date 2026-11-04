@@ -2,7 +2,7 @@ import type { ToolSearchExecutionContext } from "@zcode/contracts";
 import { getTurnTools } from "./turn-tool-visibility.js";
 import { isOffPeakUserTakeover, refreshOffPeakTurnAfterTakeover } from "../off-peak/turn.js";
 
-import { beginLocalTurnPreparation } from "@zcode/contracts";
+import { beginLocalTurnPreparation, getModelUsageContextTokens } from "@zcode/contracts";
 import {
   CompactTrigger,
   CoreErrorType,
@@ -75,6 +75,7 @@ import {
   recordModelHistoryRound,
 } from "./turn-loop-state.js";
 import {
+  persistContextUsageBreakdown,
   querySourceForTask,
   recordMainTurnCacheHitUsage,
   recordMainTurnModelUsage,
@@ -754,6 +755,15 @@ async function runModelBackedTurnStepImpl(
     modelTraceContext,
   );
   await this.appendEvent(modelCompleteEvent, modelTraceContext);
+  if (querySource === "main_turn" && result.contextUsageBreakdown?.length) {
+    // 事件 store 只在进程内；持久化最近一次来源占比，冷启动后弹窗在发消息前也有 breakdown。
+    await persistContextUsageBreakdown(this, {
+      breakdown: result.contextUsageBreakdown,
+      contextWindow: executionContextWindow,
+      used: getModelUsageContextTokens(result.usage),
+      traceContext: modelTraceContext,
+    });
+  }
   state.events.push(modelCompleteEvent);
   this.lastAssistantCompletedAtMs = Date.now();
   await recordMainTurnModelUsage(this, state, {

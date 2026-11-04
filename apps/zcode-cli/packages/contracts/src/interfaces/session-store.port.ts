@@ -835,6 +835,13 @@ export const SESSION_ENTRY_DYNAMIC_WORKFLOW_ACTIVATION =
   "runtime/dynamic_workflow_activation" as const;
 /** 本会话用过的能力标签（docs/design/v2/model/session-features-header.md）。 */
 export const SESSION_ENTRY_SESSION_FEATURES = "runtime/session_features" as const;
+/**
+ * 最近一次主轮请求的 context 来源占比快照。
+ *
+ * 事件 store 是进程内内存态，重启后无法从 ModelComplete 还原 breakdown；
+ * 这份 entry 让冷启动/换窗口后的上下文弹窗在发消息前也能显示来源构成。
+ */
+export const SESSION_ENTRY_CONTEXT_USAGE_BREAKDOWN = "runtime/context_usage_breakdown" as const;
 
 export const SESSION_ENTRY_TYPES = [
   SESSION_ENTRY_TARGET_COMPLETION_VERIFICATION,
@@ -846,6 +853,7 @@ export const SESSION_ENTRY_TYPES = [
   SESSION_ENTRY_WORKSPACE_FILE_REWIND,
   SESSION_ENTRY_DYNAMIC_WORKFLOW_ACTIVATION,
   SESSION_ENTRY_SESSION_FEATURES,
+  SESSION_ENTRY_CONTEXT_USAGE_BREAKDOWN,
 ] as const;
 
 export type SessionEntryType = (typeof SESSION_ENTRY_TYPES)[number];

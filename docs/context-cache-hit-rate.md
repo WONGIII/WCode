@@ -38,6 +38,23 @@ Provider/context projections may invalidate Compact-preserved assistant usage to
 context anchor, but that projection-only invalidation must not erase the same request from the
 recovered cache aggregate.
 
+### Durable Breakdown Restore
+
+`ModelComplete` events only live in the CLI process memory. After a restart or when a task is
+opened in a fresh process, `persistedContextUsageBreakdownEvents` is empty and the context popover
+would fall back to a solid progress bar without source percentages until the next message.
+
+The runtime therefore writes the latest main-turn `contextUsageBreakdown` into a session entry
+(`runtime/context_usage_breakdown`) together with the `used`/`contextWindow` it was computed for.
+Cold restore reads that entry and uses it as the breakdown candidate after checking that its
+`used`/`contextWindow` still match the recovered context usage. This keeps the pre-message popover
+showing the same source composition as the last request; stale entries from a previous branch or
+before a compaction are rejected by the same alignment rule as live events.
+
+The popover layout is unchanged: capacity bar, total/input/output/cache rows, average cache hit
+rate, then the source breakdown (blue dots + percentages). The live event always wins over the
+persisted entry when both exist.
+
 ## Developer Tools Panel
 
 When localStorage contains `zcode:developer-tools:enabled` or the legacy alias

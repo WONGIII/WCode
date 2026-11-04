@@ -16,6 +16,7 @@ import type { SendInputOptions } from "../app/types.js";
 import { repairPersistedRemoteSessionPaths, type TurnAttachment } from "@zcode/core";
 import {
   CoreErrorType,
+  SESSION_ENTRY_CONTEXT_USAGE_BREAKDOWN,
   SESSION_ENTRY_TARGET_COMPLETION_VERIFICATION,
   createMessageId,
   createPartId,
@@ -70,6 +71,7 @@ import {
   zcodeSessionSetThoughtLevelParamsSchema,
   zcodeSessionStopParamsSchema,
   zcodeSessionSubscribeParamsSchema,
+  zcodeContextUsageBreakdownSchema,
   zcodeSessionSubagentsParamsSchema,
   zcodeTaskTokenUsageParamsSchema,
   zcodeUsageStatsParamsSchema,
@@ -101,6 +103,7 @@ import {
   mapSessionInfo,
   resolveSessionContextUsage,
   shouldExposeSessionEventToProtocol,
+  type ContextUsageBreakdownCandidate,
 } from "./mapper.js";
 import { optionalModelSelectionFromString } from "./model-mapper.js";
 import {
@@ -1949,11 +1952,13 @@ export async function readSessionContextUsage(
 ) {
   const record = context.sessions.get(sessionId);
   if (!record) return undefined;
-  const [resolvedPersistedMessages, session, events] = await Promise.all([
-    persistedMessages ?? readSessionMessages(context, record),
-    getPersistedSession(context, sessionId),
-    record.eventStore.getEvents(sessionId as SessionId),
-  ]);
+  const [resolvedPersistedMessages, session, events, persistedContextUsageBreakdown] =
+    await Promise.all([
+      persistedMessages ?? readSessionMessages(context, record),
+      getPersistedSession(context, sessionId),
+      record.eventStore.getEvents(sessionId as SessionId),
+      readPersistedContextUsageBreakdown(context, record),
+    ]);
   // 保持 legacy buildSessionSnapshot 的取数顺序：先固定持久事实，再读取 runtime
   // projection。运行中首订阅若恰逢 ModelComplete/rewind，不能因窄读把 projection
   // 提前到并行阶段而制造新的跨水位组合。
@@ -1965,6 +1970,7 @@ export async function readSessionContextUsage(
   );
   return resolveSessionContextUsage({
     messages,
+    persistedContextUsageBreakdown,
     persistedContextUsageBreakdownEvents: events,
     projection,
   });
@@ -3685,6 +3691,7 @@ function toRuntimeModelSelection(
 }
 
 interface SnapshotPhaseDurationsMs {
+  contextUsageBreakdownEntry: number;
   contextUsageBreakdownEvents: number;
   eventSeq: number;
   goalVerificationEvents: number;
@@ -3724,6 +3731,7 @@ async function snapshotWithDiagnostics(
 ): Promise<SnapshotWithDiagnostics> {
   const snapshotStartedAt = Date.now();
   const phaseDurationsMs: SnapshotPhaseDurationsMs = {
+    contextUsageBreakdownEntry: 0,
     contextUsageBreakdownEvents: 0,
     eventSeq: 0,
     goalVerificationEvents: 0,
@@ -3754,6 +3762,7 @@ async function snapshotWithDiagnostics(
     persistedTodos,
     persistedGoalVerificationEvents,
     persistedContextUsageBreakdownEvents,
+    persistedContextUsageBreakdown,
   ] = await Promise.all([
     measureSnapshotPhase("eventSeq", () =>
       getProtocolEventSeq(context, record, record.deliveryKind),
@@ -3773,6 +3782,9 @@ async function snapshotWithDiagnostics(
     measureSnapshotPhase("contextUsageBreakdownEvents", () =>
       readSessionContextUsageBreakdownEvents(record),
     ),
+    measureSnapshotPhase("contextUsageBreakdownEntry", () =>
+      readPersistedContextUsageBreakdown(context, record),
+    ),
   ]);
   const messages = projectActiveSessionMessages(persistedMessages, session, rewindEvents);
   const buildStartedAt = Date.now();
@@ -3785,6 +3797,7 @@ async function snapshotWithDiagnostics(
     lastError: record.restoreWarning,
     messages: limitMessages(messages, options.messageLimit),
     modelAvailability: options.modelAvailability,
+    persistedContextUsageBreakdown,
     persistedContextUsageBreakdownEvents,
     persistedGoalVerificationEvents,
     session,
@@ -3991,6 +4004,63 @@ async function readSessionContextUsageBreakdownEvents(
 ): Promise<SessionEvent[]> {
   const events = await record.eventStore.getEvents(record.app.sessionId as SessionId);
   return events.filter((event) => event.type === SessionEventType.ModelComplete);
+}
+
+/**
+ * 读取最近一次主轮请求持久化的 context 来源占比。
+ *
+ * eventStore 是进程内内存态，CLI 重启或换窗口后 ModelComplete 已不存在；
+ * 这份 session entry 是发消息前弹窗展示 breakdown 的唯一来源。
+ * 数据只在 entry 内部的 used/size 仍与当前恢复出的 usage 对齐时才会被采用，
+ * 对齐规则留在 session-mapper 的 applyContextUsageBreakdown。
+ */
+async function readPersistedContextUsageBreakdown(
+  context: ZCodeProtocolAgentServerContext,
+  record: ZCodeProtocolSessionRecord,
+): Promise<ContextUsageBreakdownCandidate | undefined> {
+  const store = context.deps.sessionStore;
+  if (!store?.sessionEntries) {
+    return undefined;
+  }
+  try {
+    const entries = await store.sessionEntries({
+      sessionID: record.app.sessionId as SessionId,
+      type: SESSION_ENTRY_CONTEXT_USAGE_BREAKDOWN,
+    });
+    const data = entries.at(-1)?.data;
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      return undefined;
+    }
+    const candidate = data as Record<string, unknown>;
+    const parsed = zcodeContextUsageBreakdownSchema.safeParse(candidate.breakdown);
+    const used = candidate.used;
+    if (
+      !parsed.success ||
+      parsed.data.length === 0 ||
+      typeof used !== "number" ||
+      !Number.isFinite(used) ||
+      used <= 0
+    ) {
+      return undefined;
+    }
+    const contextWindow = candidate.contextWindow;
+    return {
+      breakdown: parsed.data,
+      used,
+      ...(typeof contextWindow === "number" && Number.isFinite(contextWindow) && contextWindow > 0
+        ? { contextWindow }
+        : {}),
+    };
+  } catch (error) {
+    context.logger?.warn("读取持久化 context 来源占比失败", {
+      errorMessage: error instanceof Error ? error.message : String(error),
+      event: "context_usage.breakdown.restore_failed",
+      module: "bootstrap.protocol",
+      sessionID: String(record.app.sessionId),
+      status: "failed",
+    });
+    return undefined;
+  }
 }
 
 async function readActiveSessionMessages(

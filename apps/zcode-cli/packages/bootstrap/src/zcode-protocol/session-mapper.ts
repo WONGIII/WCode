@@ -66,6 +66,7 @@ export async function buildSessionSnapshot(input: {
   messages: MessageWithParts[];
   modelAvailability?: "all" | "current";
   persistedGoalVerificationEvents?: SessionEvent[];
+  persistedContextUsageBreakdown?: ContextUsageBreakdownCandidate;
   persistedContextUsageBreakdownEvents?: SessionEvent[];
   session?: SessionInfo | null;
   stateRevision: number;
@@ -109,6 +110,7 @@ export async function buildSessionSnapshot(input: {
       deliveryKind: input.deliveryKind,
       eventSeq: input.eventSeq,
       messages: input.messages,
+      persistedContextUsageBreakdown: input.persistedContextUsageBreakdown,
       persistedContextUsageBreakdownEvents: input.persistedContextUsageBreakdownEvents,
       projection,
       stateRevision: input.stateRevision,
@@ -561,6 +563,7 @@ function mapRuntimeState(input: {
   deliveryKind?: ZCodeDeliveryKind;
   eventSeq: number;
   messages: MessageWithParts[];
+  persistedContextUsageBreakdown?: ContextUsageBreakdownCandidate;
   persistedContextUsageBreakdownEvents?: readonly SessionEvent[];
   projection: SessionProjection;
   stateRevision: number;
@@ -570,6 +573,7 @@ function mapRuntimeState(input: {
   const activeTurnId = input.activeTurn?.turnId;
   const contextUsage = resolveSessionContextUsage({
     messages: input.messages,
+    persistedContextUsageBreakdown: input.persistedContextUsageBreakdown,
     persistedContextUsageBreakdownEvents: input.persistedContextUsageBreakdownEvents,
     projection: input.projection,
   });
@@ -592,7 +596,7 @@ function mapRuntimeState(input: {
   };
 }
 
-interface ContextUsageBreakdownCandidate {
+export interface ContextUsageBreakdownCandidate {
   breakdown: ZCodeContextUsageBreakdownItem[];
   contextWindow?: number;
   used: number;
@@ -603,9 +607,13 @@ interface ContextUsageBreakdownCandidate {
  *
  * V4 冷恢复只需要 context usage，过去却通过 full legacy snapshot 间接读取。
  * 抽出纯投影后，两条路径继续共享 active-branch token/cache 与 breakdown 对齐规则。
+ *
+ * breakdown 候选优先取进程内 ModelComplete（最新事实）；冷启动 eventStore 为空时
+ * 回退到持久化的 session entry，让发消息前的弹窗也能展示来源占比。
  */
 export function resolveSessionContextUsage(input: {
   messages: readonly MessageWithParts[];
+  persistedContextUsageBreakdown?: ContextUsageBreakdownCandidate;
   persistedContextUsageBreakdownEvents?: readonly SessionEvent[];
   projection: SessionProjection;
 }): ZCodeSessionContextUsage | undefined {
@@ -613,6 +621,9 @@ export function resolveSessionContextUsage(input: {
     input.messages,
     input.projection.contextWindow,
   );
+  const breakdownCandidate =
+    latestContextUsageBreakdownFromEvents(input.persistedContextUsageBreakdownEvents ?? []) ??
+    input.persistedContextUsageBreakdown;
   return applyContextUsageBreakdown(
     contextUsageFromProjection(
       input.projection,
@@ -620,7 +631,7 @@ export function resolveSessionContextUsage(input: {
         ? persistedContextUsage.cache
         : undefined,
     ) ?? persistedContextUsage,
-    latestContextUsageBreakdownFromEvents(input.persistedContextUsageBreakdownEvents ?? []),
+    breakdownCandidate,
   );
 }
 
@@ -856,9 +867,7 @@ function contextCacheUsageFromMessages(
   };
 }
 
-function mapPendingPermission(
-  permission: PendingPermission,
-): ZCodePendingPermission {
+function mapPendingPermission(permission: PendingPermission): ZCodePendingPermission {
   // display / optionsPolicy 刻意不进 legacy v3 输出。
   // 根因不是"扩 schema 只能单向兼容"，而是 strict schema 随 packages/shared 打进每个桌面端
   // 的产物：今天把 zcodePendingPermissionSchema（shared/src/zcode-protocol/index.ts:1139）和
@@ -885,9 +894,7 @@ function mapPendingPermission(
   };
 }
 
-function mapPermissionRequestedPayload(
-  payload: unknown,
-): Record<string, unknown> {
+function mapPermissionRequestedPayload(payload: unknown): Record<string, unknown> {
   // 同 mapPendingPermission：这个 payload 是整体 spread 出去的，新字段必须在这里显式解构
   // 剔除，否则会直接漏进 strict 的 zcodePermissionRequestedEventPayloadSchema。
   const { display: _display, optionsPolicy, ...record } = asRecord(payload);

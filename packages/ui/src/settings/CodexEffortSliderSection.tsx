@@ -1,20 +1,16 @@
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { Switch } from "@/components/ui/switch.js";
-import { Button } from "@/components/ui/button.js";
 import { SettingsGroupCard, SettingsRow } from "@/settings/SettingsPageParts.js";
 import { useCodexEffortSliderSettings } from "@/hooks/useCodexEffortSliderSettings.js";
-import {
-  resetCodexEffortSliderSettings,
-  setCodexEffortSliderSettings,
-} from "@/lib/codexEffortSliderSettings.js";
+import { setCodexEffortSliderSettings } from "@/lib/codexEffortSliderSettings.js";
 
 /**
  * 外观设置里的「推理档位滑块」区块。
  *
  * 总开关默认关闭，关闭时不改变输入框原有的档位控件表现。
- * 两个子开关只在总开关开启后可调，且各自独立：
- * - 「无实际作用」说明：Fast 纯粹是视觉，避免用户误以为能加速
+ * 两个子开关只在总开关开启后可调：
  * - Fast 闪电按钮：是否显示这个开关本身
+ * - 「无实际作用」说明：Fast 纯粹是视觉，避免用户误以为能加速
  */
 export function CodexEffortSliderSection() {
   const { intl } = useZCodeIntl();
@@ -45,9 +41,7 @@ export function CodexEffortSliderSection() {
               })}
               size="sm"
               checked={settings.enabled}
-              onCheckedChange={(checked) =>
-                setCodexEffortSliderSettings({ enabled: checked })
-              }
+              onCheckedChange={(checked) => setCodexEffortSliderSettings({ enabled: checked })}
               className="shrink-0"
             />
           }
@@ -66,9 +60,7 @@ export function CodexEffortSliderSection() {
               size="sm"
               checked={settings.showFastBolt}
               disabled={subDisabled}
-              onCheckedChange={(checked) =>
-                setCodexEffortSliderSettings({ showFastBolt: checked })
-              }
+              onCheckedChange={(checked) => setCodexEffortSliderSettings({ showFastBolt: checked })}
               className="shrink-0"
             />
           }
@@ -92,23 +84,6 @@ export function CodexEffortSliderSection() {
               }
               className="shrink-0"
             />
-          }
-        />
-        <SettingsRow
-          label={intl.formatMessage({ id: "settings.appearance.codexEffort.reset" })}
-          description={intl.formatMessage({
-            id: "settings.appearance.codexEffort.resetDescription",
-          })}
-          control={
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              data-testid="codex-effort-slider-reset"
-              onClick={() => resetCodexEffortSliderSettings()}
-            >
-              {intl.formatMessage({ id: "settings.appearance.codexEffort.resetAction" })}
-            </Button>
           }
         />
       </SettingsGroupCard>

@@ -3180,6 +3180,38 @@ describe("v4 冷恢复（集成：真 sqlite + server + binder）", () => {
     });
   });
 
+  it("冷启动 eventStore 为空时使用持久化 breakdown entry，尺寸不一致则丢弃", async () => {
+    const assistantMessage = {
+      info: {
+        role: "assistant",
+        tokens: { input: 7, output: 2, reasoning: 0, cache: { read: 0, write: 0 } },
+      } as MessageWithParts["info"],
+      parts: [],
+    };
+    const projection = await createColdFakeApp(undefined, []).runtime.getProjection();
+    const breakdown = [
+      { source: "system_prompt" as const, chars: 60 },
+      { source: "messages" as const, chars: 40 },
+    ];
+
+    expect(
+      resolveSessionContextUsage({
+        messages: [assistantMessage],
+        persistedContextUsageBreakdown: { breakdown, contextWindow: 128_000, used: 9 },
+        projection,
+      }),
+    ).toMatchObject({ size: 128_000, used: 9, breakdown });
+
+    // 旧分支/压缩前的比例不能挂到当前窗口水位上。
+    expect(
+      resolveSessionContextUsage({
+        messages: [assistantMessage],
+        persistedContextUsageBreakdown: { breakdown, contextWindow: 128_000, used: 99 },
+        projection,
+      }),
+    ).not.toHaveProperty("breakdown");
+  });
+
   it("重启后冷订阅：优先从 Agent durable selection 恢复 task-local thought", async () => {
     const dbPath = join(tempRoot, "sessions.db");
     await seedPersistedSession(dbPath);

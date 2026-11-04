@@ -5,8 +5,13 @@ import type { ContextCumulativeTokens } from "@/chat-input-toolbar/contextUsage.
 
 /** 首 token 平均 TTFT 与会话总耗时都来自调试快照的 round 序列，这里只做聚合。 */
 export interface SessionTokenSpeedSummary {
-  /** 最近一轮的生成速度（token/s）；无有效数据时为 null。 */
-  latestTokensPerSecond: number | null;
+  /**
+   * 整个会话的平均生成速度（token/s）。
+   *
+   * 口径是「所有主轮输出 token 之和 / 所有主轮生成耗时之和」，
+   * 而不是每轮速度的算术平均：短轮次不应该和长轮次权重相同。
+   */
+  averageTokensPerSecond: number | null;
   /** 全会话首 token 延迟平均值（毫秒）；无有效样本时为 null。 */
   averageTtftMs: number | null;
   /** 会话总用时（毫秒，从最早 round 起点到最晚 round 结束）；无数据时为 null。 */
@@ -16,24 +21,45 @@ export interface SessionTokenSpeedSummary {
 }
 
 const EMPTY_SUMMARY: SessionTokenSpeedSummary = {
-  latestTokensPerSecond: null,
+  averageTokensPerSecond: null,
   averageTtftMs: null,
   sessionDurationMs: null,
   ttftSampleCount: 0,
 };
 
-/** 取最近一个有值的速度；rounds 按时间顺序追加，倒序找第一个有效值即可。 */
-function resolveLatestTokensPerSecond(
-  rounds: readonly SessionDebugRound[],
-): number | null {
-  for (let index = rounds.length - 1; index >= 0; index -= 1) {
-    const value = rounds[index]?.tokensPerSecond;
-    if (value !== null && value !== undefined && Number.isFinite(value) && value > 0) {
-      return value;
+/**
+ * 全会话平均速度：总输出 token / 总生成耗时。
+ *
+ * 只累计 outputTokens 与 generationDurationMs 都有效的轮次；
+ * 用真实生成时长做分母，避免把排队、工具执行等空档算进模型速度。
+ */
+function resolveAverageTokensPerSecond(rounds: readonly SessionDebugRound[]): number | null {
+  let totalOutputTokens = 0;
+  let totalGenerationMs = 0;
+
+  for (const round of rounds) {
+    const outputTokens = round.usage.outputTokens;
+    const generationMs = round.generationDurationMs;
+    if (
+      outputTokens === undefined ||
+      !Number.isFinite(outputTokens) ||
+      outputTokens < 0 ||
+      generationMs === null ||
+      !Number.isFinite(generationMs) ||
+      generationMs <= 0
+    ) {
+      continue;
     }
+    totalOutputTokens += outputTokens;
+    totalGenerationMs += generationMs;
   }
 
-  return null;
+  if (totalGenerationMs <= 0) {
+    return null;
+  }
+
+  const average = (totalOutputTokens * 1_000) / totalGenerationMs;
+  return Number.isFinite(average) && average > 0 ? average : null;
 }
 
 export function summarizeSessionTokenSpeed(
@@ -80,7 +106,7 @@ export function summarizeSessionTokenSpeed(
       : null;
 
   return {
-    latestTokensPerSecond: resolveLatestTokensPerSecond(rounds),
+    averageTokensPerSecond: resolveAverageTokensPerSecond(rounds),
     averageTtftMs: ttftSampleCount > 0 ? ttftTotal / ttftSampleCount : null,
     sessionDurationMs,
     ttftSampleCount,

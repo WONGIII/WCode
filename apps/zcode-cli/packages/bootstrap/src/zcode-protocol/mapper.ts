@@ -10,4 +10,5 @@ export {
   resolveSessionContextUsage,
   shouldExposeSessionEventToProtocol,
 } from "./session-mapper.js";
+export type { ContextUsageBreakdownCandidate } from "./session-mapper.js";
 export { buildWorkspaceRef, resolveWorkspaceRefFromId } from "./workspace.js";

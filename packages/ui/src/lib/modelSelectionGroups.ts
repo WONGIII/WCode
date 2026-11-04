@@ -10,86 +10,6 @@ import type { ModelSelectGroup } from "@/ModelConfigSelect.js";
 import { decodeCustomModelValue, encodeCustomModelValue } from "@/lib/zcodeCustomModelValue.js";
 import { shouldShowModelVisionBadge } from "@/lib/modelVisionBadge.js";
 
-/**
- * 模型 ID → 可读显示名的兜底格式化。
- *
- * 用户显式配置的 displayName 永远优先；只有未配置时才使用这里的结果。
- * 目的不是猜厂商官方名称，而是避免输入框和模型菜单直接暴露
- * `deepseek-v4.1-flash` 这类内部 ID。
- */
-const MODEL_ID_BRAND_CASING: Record<string, string> = {
-  ai: "AI",
-  api: "API",
-  claude: "Claude",
-  codex: "Codex",
-  command: "Command",
-  deepseek: "DeepSeek",
-  gemini: "Gemini",
-  glm: "GLM",
-  gpt: "GPT",
-  grok: "Grok",
-  kimi: "Kimi",
-  llama: "Llama",
-  mcp: "MCP",
-  mimo: "MiMo",
-  mistral: "Mistral",
-  qwen: "Qwen",
-  vl: "VL",
-};
-
-const MODEL_ID_WORD_CASING: Record<string, string> = {
-  chat: "Chat",
-  coder: "Coder",
-  flash: "Flash",
-  highspeed: "Highspeed",
-  instruct: "Instruct",
-  latest: "Latest",
-  max: "Max",
-  mini: "Mini",
-  preview: "Preview",
-  pro: "Pro",
-  reasoning: "Reasoning",
-  thinking: "Thinking",
-  turbo: "Turbo",
-  vision: "Vision",
-};
-
-function formatModelIdDisplayName(modelId: string): string {
-  const trimmed = modelId.trim();
-  if (!trimmed) {
-    return modelId;
-  }
-  // 供应商前缀（如 deepseek/deepseek-v4.1-flash）不进入显示名。
-  const leaf = trimmed.split("/").pop()?.trim() || trimmed;
-  const parts = leaf.replace(/_+/g, "-").split("-").filter(Boolean);
-  if (parts.length === 0) {
-    return trimmed;
-  }
-
-  return parts
-    .map((part) => {
-      const lower = part.toLowerCase();
-      const brand = MODEL_ID_BRAND_CASING[lower];
-      if (brand) {
-        return brand;
-      }
-      const word = MODEL_ID_WORD_CASING[lower];
-      if (word) {
-        return word;
-      }
-      // v4 / v4.1 → V4 / V4.1
-      if (/^v\d+(?:\.\d+)*$/.test(lower)) {
-        return `V${lower.slice(1)}`;
-      }
-      // 纯版本号、日期与数字后缀保持原样。
-      if (/^\d+(?:\.\d+)*$/.test(lower) || /^\d{4,8}$/.test(lower)) {
-        return lower;
-      }
-      return part.charAt(0).toUpperCase() + part.slice(1);
-    })
-    .join(" ");
-}
-
 export interface ModelProviderGroupLabelOptions {
   apiKeyLabel?: string;
   apiKeyBadgeLabel?: string;
@@ -143,10 +63,10 @@ export function buildRegistryModelSelectGroups(
         items: provider.models.map(({ modelId, config }) => ({
           key: `registry-provider:${provider.providerId}:${modelId}`,
           value: encodeCustomModelValue(provider.providerId, modelId),
-          // 用户自定义显示名优先；未设置时把模型 ID 转成可读名称。
+          // 用户自定义显示名优先；未设置时回退模型 ID。
           // 这里才是输入框模型选择菜单真正渲染的 name 来源，
           // 改 CLI 侧 toModelOption.label 不会影响这条链路。
-          name: config.displayName?.trim() || formatModelIdDisplayName(modelId),
+          name: config.displayName?.trim() || modelId,
           ...(shouldShowModelVisionBadge(
             modelId,
             config.properties?.inputFormat?.supportsImage,
@@ -185,6 +105,5 @@ export function resolveModelDisplayName(
     if (matched) return matched.name;
   }
 
-  const custom = decodeCustomModelValue(value);
-  return custom?.modelName ? formatModelIdDisplayName(custom.modelName) : null;
+  return decodeCustomModelValue(value)?.modelName ?? null;
 }

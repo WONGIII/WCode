@@ -348,10 +348,12 @@ export function CodexEffortSlider({
         ) : null}
       </div>
 
-      {/* 扫光警告：进入 Ultra 时短暂覆盖标题行，不改变滑块高度。 */}
+      {/* 扫光警告：进入 Ultra 时短暂覆盖标题行，不改变滑块高度。
+          不使用独立背景色：菜单项 hover/选中高亮需要连续铺满整行，
+          否则会在高亮上留下一个突兀的浅色方块。 */}
       {warning ? (
         <div
-          className="codex-effort-warning absolute inset-x-0 top-0 z-10 bg-menu py-1 text-center text-ui-sm"
+          className="codex-effort-warning absolute inset-x-0 top-0 z-10 py-1 text-center text-ui-sm"
           aria-live="polite"
         >
           <span>{ultraWarning}</span>

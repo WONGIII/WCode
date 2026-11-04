@@ -5,6 +5,7 @@ import type { ModelSelectGroup } from "@/ModelConfigSelect.js";
 import { isNoThoughtLevel } from "@/chat-input-toolbar/thoughtLevelOptions.js";
 import { ComposerEffortHeading } from "@/chat-input-toolbar/ComposerEffortHeading.js";
 import { ComposerProviderMenu } from "@/chat-input-toolbar/ComposerProviderMenu.js";
+import { CodexEffortSlider } from "@/chat-input-toolbar/CodexEffortSlider.js";
 import { useCodexEffortSliderSettings } from "@/hooks/useCodexEffortSliderSettings.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import {
@@ -13,29 +14,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu.js";
 import "@/chat-input-toolbar/composer-thought-slider.css";
-import "@/chat-input-toolbar/composer-thought-slider-codex.css";
-
-// 固定种子避免重渲染重新随机，让最高档气泡错峰流动而不影响模型选择状态。
-const EFFORT_BUBBLES = [
-  { top: 4, size: 2, duration: 2.6, delay: -0.4 },
-  { top: 14, size: 3, duration: 3.2, delay: -2.1 },
-  { top: 8, size: 4, duration: 2.8, delay: -1.1 },
-  { top: 18, size: 2, duration: 3.6, delay: -0.8 },
-  { top: 3, size: 3, duration: 3, delay: -2.5 },
-  { top: 12, size: 2, duration: 3.4, delay: -1.7 },
-  { top: 6, size: 3, duration: 3.1, delay: -0.9 },
-  { top: 17, size: 4, duration: 2.9, delay: -2.3 },
-  { top: 10, size: 2, duration: 3.5, delay: -0.2 },
-  { top: 2, size: 2, duration: 2.7, delay: -1.8 },
-  { top: 15, size: 3, duration: 3.3, delay: -1.2 },
-  { top: 7, size: 4, duration: 3.6, delay: -3.1 },
-];
-
-const HIGHSPEED_BUBBLES = Array.from({ length: 32 }, (_, index) => ({
-  ...EFFORT_BUBBLES[index % EFFORT_BUBBLES.length]!,
-  duration: (8 + (index % 5)) / 10,
-  delay: -index * 0.137,
-}));
+import "@/chat-input-toolbar/codex-effort-slider.css";
 
 export interface ComposerModelOptions {
   providerMenu?: {
@@ -134,15 +113,13 @@ export function ComposerModelMenu({
     selected ??
     menuGroups[0];
   // 视觉只由选中模型名称派生，避免供应商名或内部 value 含 highspeed 时误触发。
-  const modelName = selected?.items.find((item) => item.value === normalizedValue)?.name ?? "";
-  const highspeed = isGlmHighspeedModel(modelName);
   const currentGroupSelected = group?.key === selected?.key && Boolean(selected);
   const currentIndex = options.levels.findIndex((level) => level.value === options.value);
   const { label } = getComposerThoughtDisplay(options);
-  const sliderRef = useRef<HTMLInputElement>(null);
+  // Codex 滑块没有原生 input，焦点由外层容器承接，方向键在滑块内部处理。
+  const codexRailRef = useRef<HTMLDivElement>(null);
   const catalogPending = groups.length === 0 && Boolean(normalizedValue);
   const showEffort = options.levels.length > 0 || catalogPending;
-  const [hoveredStop, setHoveredStop] = useState<string | null>(null);
   // Codex 风格滑块：默认关闭，开启后叠加 Codex 视觉与 Fast 开关。
   const codexSettings = useCodexEffortSliderSettings();
   const { intl } = useZCodeIntl();
@@ -151,12 +128,6 @@ export function ComposerModelMenu({
   const codexMode = codexSettings.enabled;
   const sliderDisabled =
     Boolean(options.providerMenu?.pending) || !currentGroupSelected || options.levels.length < 2;
-  const sliderProgress =
-    options.levels.length > 1 && currentIndex >= 0 && currentGroupSelected
-      ? (currentIndex / (options.levels.length - 1)) * 100
-      : 0;
-  const sliderFilled =
-    currentGroupSelected && currentIndex >= 0 && !isNoThoughtLevel(options.levels[currentIndex]!);
   const selectSliderValue = (index: number) => {
     const level = options.levels[index];
     if (!sliderDisabled && level && level.value !== options.value)
@@ -224,205 +195,44 @@ export function ComposerModelMenu({
                 aria-disabled={sliderDisabled}
                 onSelect={(event) => event.preventDefault()}
                 onFocus={(event) => {
-                  if (event.target === event.currentTarget) sliderRef.current?.focus();
+                  if (event.target === event.currentTarget) codexRailRef.current?.focus();
                 }}
               >
-                <div
-                  className="flex items-center justify-between gap-2"
-                  data-codex-effort={codexMode || undefined}
-                >
-                  <ComposerEffortHeading
-                    label={options.effortLabel}
-                    value={currentGroupSelected ? label : "—"}
-                    shortcut={options.effortShortcutLabel}
+                <ComposerEffortHeading
+                  label={options.effortLabel}
+                  value={currentGroupSelected ? label : "—"}
+                  shortcut={options.effortShortcutLabel}
+                  ultra={
+                    codexMode &&
+                    currentGroupSelected &&
+                    currentIndex === options.levels.length - 1 &&
+                    !isNoThoughtLevel(options.levels[currentIndex]!)
+                  }
+                />
+                <div ref={codexRailRef} className="mt-1 outline-none" tabIndex={-1}>
+                  <CodexEffortSlider
+                    levelCount={options.levels.length}
+                    value={Math.max(0, currentIndex)}
+                    onValueChange={(index) => selectSliderValue(index)}
                     ultra={
-                      codexMode &&
                       currentGroupSelected &&
                       currentIndex === options.levels.length - 1 &&
                       !isNoThoughtLevel(options.levels[currentIndex]!)
                     }
-                  />
-                  {/* Fast 闪电：纯视觉开关，不改变推理档位，也不影响实际用量。 */}
-                  {codexMode && codexSettings.showFastBolt ? (
-                    <button
-                      type="button"
-                      className="flex size-6 shrink-0 items-center justify-center rounded-md text-foreground-subtle transition-colors hover:bg-foreground/5 hover:text-foreground"
-                      data-testid="codex-effort-fast-toggle"
-                      aria-label={intl.formatMessage({ id: "settings.appearance.codexEffort.fast" })}
-                      aria-pressed={codexFast}
-                      onClick={(event) => {
-                        // 按钮在菜单项内，阻止冒泡避免 Radix 把点击当作选中并关闭菜单。
-                        event.preventDefault();
-                        event.stopPropagation();
-                        setCodexFast((current) => !current);
-                      }}
-                    >
-                      <svg
-                        className="codex-effort-bolt"
-                        data-active={codexFast}
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path d="M14.4 2Q16 .2 15.8 2.5L15.1 8.5H20.5Q22 8.5 21 9.8L10.7 21.7Q9 23.4 9.2 21.2L10 14.2H4.2Q2.6 14.2 3.6 12.9L14.4 2Z" />
-                      </svg>
-                    </button>
-                  ) : null}
-                </div>
-                {/* 说明文字可独立关闭：Fast 无实际作用，避免用户误以为能加速。 */}
-                {codexMode && codexSettings.showNoEffectNote && codexFast ? (
-                  <p className="codex-effort-note mt-1">
-                    {intl.formatMessage({
-                      id: "settings.appearance.codexEffort.noEffectNote",
+                    fast={codexFast}
+                    showFastBolt={codexSettings.showFastBolt}
+                    onFastChange={setCodexFast}
+                    disabled={sliderDisabled}
+                    fastLabel={intl.formatMessage({
+                      id: "settings.appearance.codexEffort.fast",
                     })}
-                  </p>
-                ) : null}
-                <div
-                  className="composer-thought-slider relative h-8 w-full rounded-full"
-                  data-disabled={sliderDisabled}
-                  data-codex-effort={codexMode || undefined}
-                >
-                  <div
-                    // 模型或档位目录变化时只重置视觉层，避免跨模型补间，同时保留 input 焦点。
-                    key={JSON.stringify([
-                      normalizedValue,
-                      group?.key,
-                      options.levels.map((level) => level.value),
-                    ])}
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0"
-                  >
-                    <div
-                      data-testid="composer-thought-track"
-                      data-progress={sliderFilled ? sliderProgress : 0}
-                      className="absolute inset-x-0 top-1 h-6 overflow-hidden rounded-full bg-foreground/10"
-                    >
-                      {/* 外层 border 会包住绿色填充；描边放到底层，让选中区域完全覆盖它。 */}
-                      <div className="absolute inset-0 rounded-full border border-foreground/10" />
-                      <div
-                        className="composer-thought-slider-fill absolute inset-y-0 left-0 overflow-hidden rounded-full"
-                        data-max={sliderFilled && currentIndex === options.levels.length - 1}
-                        data-highspeed={highspeed && currentGroupSelected}
-                        style={{
-                          width: sliderFilled
-                            ? `calc(14px + (100% - 28px) * ${sliderProgress / 100})`
-                            : 0,
-                        }}
-                      >
-                        {sliderFilled &&
-                        currentIndex === options.levels.length - 1 &&
-                        !sliderDisabled ? (
-                          <div
-                            data-testid="composer-thought-bubbles"
-                            className="composer-thought-bubbles absolute inset-0"
-                          >
-                            {(highspeed ? HIGHSPEED_BUBBLES : EFFORT_BUBBLES).map(
-                              (bubble, index) => (
-                                <span
-                                  key={index}
-                                  className="composer-thought-bubble absolute inset-x-0"
-                                  style={{
-                                    top: bubble.top,
-                                    animationDuration: `${bubble.duration}s`,
-                                    animationDelay: `${bubble.delay}s`,
-                                  }}
-                                >
-                                  <span
-                                    className="block rounded-full bg-white"
-                                    style={{ width: bubble.size, height: bubble.size }}
-                                  />
-                                </span>
-                              ),
-                            )}
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="absolute inset-x-3.5 inset-y-0 flex items-center justify-between">
-                      {options.levels.map((level, index) => (
-                        <span
-                          key={level.value}
-                          data-composer-thought-stop
-                          data-filled={sliderFilled && index <= currentIndex}
-                          data-hovered={
-                            !sliderDisabled && hoveredStop === `${normalizedValue}:${level.value}`
-                          }
-                          className="composer-thought-slider-stop size-1 shrink-0 rounded-full"
-                        />
-                      ))}
-                    </div>
-                    <div
-                      className="composer-thought-slider-thumb absolute top-0.5 size-7 rounded-full shadow-sm"
-                      style={{ left: `calc((100% - 28px) * ${sliderProgress / 100})` }}
-                    />
-                  </div>
-                  <input
-                    ref={sliderRef}
-                    type="range"
-                    min={0}
-                    max={Math.max(0, options.levels.length - 1)}
-                    step={1}
-                    value={Math.max(0, currentIndex)}
-                    // 目录在调档后会短暂重读；原生 disabled 会移走焦点，后续方向键落到菜单。
-                    // 用 aria-disabled 保留焦点，等待期间通过事件与提交入口阻止交互。
-                    aria-disabled={sliderDisabled}
-                    aria-label={options.effortLabel}
-                    aria-valuetext={currentGroupSelected ? label : "—"}
-                    data-testid="composer-thought-slider"
-                    data-levels={JSON.stringify(options.levels.map((level) => level.value))}
-                    className="composer-thought-range absolute inset-0 m-0 h-8 w-full cursor-pointer appearance-none bg-transparent outline-none aria-disabled:cursor-default"
-                    onPointerDown={(event) => {
-                      // 拦截冒泡会让 Radix 的内部点击标记残留，导致第一次外部点击无法关闭菜单。
-                      if (sliderDisabled) event.preventDefault();
-                    }}
-                    onPointerLeave={() => setHoveredStop(null)}
-                    onPointerMove={(event) => {
-                      // 原生 range 覆盖圆点，用坐标反馈悬停，避免圆点截获拖拽事件。
-                      const rect = event.currentTarget.getBoundingClientRect();
-                      const trackWidth = rect.width - 28;
-                      const index = Math.round(
-                        ((event.clientX - rect.left - 14) / trackWidth) *
-                          (options.levels.length - 1),
-                      );
-                      const level = options.levels[index];
-                      const center =
-                        rect.left + 14 + (trackWidth * index) / (options.levels.length - 1);
-                      setHoveredStop(
-                        !sliderDisabled &&
-                          event.pointerType !== "touch" &&
-                          level &&
-                          Math.abs(event.clientX - center) <= 10
-                          ? `${normalizedValue}:${level.value}`
-                          : null,
-                      );
-                    }}
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => {
-                      if (event.key !== "Escape") {
-                        event.stopPropagation();
-                        if (sliderDisabled && event.key !== "Tab") event.preventDefault();
-                      }
-                    }}
-                    // 原因：缺失档位时 range 的物理位置仍为 0；Home 或点击首格不触发 change，
-                    // 必须在明确完成手势时接纳首格选择，不能把展示位置提前当成用户意图。
-                    onKeyUp={(event) => {
-                      if (
-                        [
-                          "Home",
-                          "End",
-                          "ArrowLeft",
-                          "ArrowRight",
-                          "ArrowUp",
-                          "ArrowDown",
-                          "PageUp",
-                          "PageDown",
-                        ].includes(event.key)
-                      )
-                        selectSliderValue(Number(event.currentTarget.value));
-                    }}
-                    onPointerUp={(event) => {
-                      selectSliderValue(Number(event.currentTarget.value));
-                    }}
-                    onChange={(event) => selectSliderValue(Number(event.currentTarget.value))}
+                    noEffectNote={
+                      codexSettings.showNoEffectNote
+                        ? intl.formatMessage({
+                            id: "settings.appearance.codexEffort.noEffectNote",
+                          })
+                        : undefined
+                    }
                   />
                 </div>
               </DropdownMenuItem>

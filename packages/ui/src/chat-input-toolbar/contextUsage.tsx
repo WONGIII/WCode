@@ -1137,6 +1137,20 @@ export function ChatContextUsage({
           {renderableTaskUsage &&
           (breakdownSegments.length > 0 || cacheHitRateLabel) ? (
             <>
+              {/* 平均缓存命中率放在分类明细之前：它是整段上下文的总体指标，
+                  先给结论再看构成更符合阅读顺序。 */}
+              {cacheHitRateLabel ? (
+                <div className="flex items-center justify-between gap-3 border-t border-border pt-3 text-ui-sm">
+                  <span className="text-foreground-subtle">
+                    {intl.formatMessage({
+                      id: "chat.contextUsage.cacheHitRate",
+                    })}
+                  </span>
+                  <span className="font-mono text-ui-sm text-foreground">
+                    {cacheHitRateLabel}
+                  </span>
+                </div>
+              ) : null}
               {breakdownSegments.length > 0 ? (
                 <div
                   aria-label={intl.formatMessage({
@@ -1167,24 +1181,6 @@ export function ChatContextUsage({
                       </div>
                     ))}
                   </div>
-                </div>
-              ) : null}
-              {cacheHitRateLabel ? (
-                <div
-                  className={cn(
-                    "flex items-center justify-between gap-3 text-ui-sm",
-                    breakdownSegments.length > 0 &&
-                      "border-t border-border pt-3",
-                  )}
-                >
-                  <span className="text-foreground-subtle">
-                    {intl.formatMessage({
-                      id: "chat.contextUsage.cacheHitRate",
-                    })}
-                  </span>
-                  <span className="font-mono text-ui-sm text-foreground">
-                    {cacheHitRateLabel}
-                  </span>
                 </div>
               ) : null}
             </>

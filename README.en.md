@@ -7,15 +7,27 @@
   <a href="README.md">简体中文</a> | English
 </p>
 
-WCode is a locally customized build based on ZCode. It keeps the AI coding workspace capabilities (desktop, browser, and terminal interfaces) and adds the following:
+WCode is an open-source fork of ZCode. It keeps the AI coding workspace capabilities (desktop, browser, and terminal interfaces) and adds the following:
 
-- **Token speed indicator**: live `tok/s` in the composer toolbar; hover to see average first-token TTFT and total session time
-- **Cumulative context usage**: total session tokens plus input/output/cache read/write breakdown in the context popover
+- **Codex reasoning effort slider**: once enabled in Appearance settings, the composer model menu uses a Codex-style slider with blue-to-purple transitions, Fast mode, and an Ultra level
+- **Token speed indicator**: whole-session average `tok/s` in the composer toolbar; hover to see average TTFT, sample count, and total session time
+- **Cumulative context usage**: total session tokens, input/output/cache read/write breakdown, average cache hit rate, and context source percentages
+- **Dark empty-state mark**: the home empty-state W follows the active theme with its outline and gradient, and stays visible in dark mode
 - **Model display names**: give any model a custom display name instead of showing only its ID
 - **Custom user identity**: set a local avatar and name to replace "Connected" when not signed in
 - **Fetch model list**: pull the remote model list for an API-key provider and add models in bulk
 
-This is a private customized fork; upstream is [zai-org/ZCode](https://github.com/zai-org/ZCode), licensed under Apache-2.0.
+This is a public community fork; upstream is [zai-org/ZCode](https://github.com/zai-org/ZCode), licensed under Apache-2.0.
+
+## Screenshots
+
+| Codex effort slider (High / Ultra) | Context usage and source breakdown |
+| :---: | :---: |
+| <img src="docs/images/codex-slider-high.png" width="360" alt="Codex effort slider - High" /><br /><img src="docs/images/codex-slider-ultra.png" width="360" alt="Codex effort slider - Ultra" /> | <img src="docs/images/context-usage.png" width="320" alt="Context usage and source breakdown" /> |
+
+| Session generation speed | Dark empty state |
+| :---: | :---: |
+| <img src="docs/images/token-speed.png" width="320" alt="Session generation speed" /> | <img src="docs/images/dark-empty-state.png" width="520" alt="Dark empty state" /> |
 
 ## Differences from upstream
 
@@ -31,7 +43,8 @@ This is a private customized fork; upstream is [zai-org/ZCode](https://github.co
 
 ## Updates
 
-- **2026-11-03**: Created the WCode customized branch based on ZCode v3.17.1.
+- **2026-11-04**: Renamed the repository to WCode, made it public, and switched the default branch to `main`; added the Codex effort slider, context source breakdown, and dark empty-state mark.
+- **2026-11-03**: Created the WCode branch based on ZCode v3.17.1.
 
 ## Setup
 

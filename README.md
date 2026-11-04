@@ -7,15 +7,27 @@
   简体中文 | <a href="README.en.md">English</a>
 </p>
 
-WCode 是基于 ZCode 的本地定制版本，保留 AI 编程工作台能力（桌面应用、浏览器界面、终端 Agent），并在此基础上增加了以下增强：
+WCode 是基于 ZCode 的开源分支，保留 AI 编程工作台能力（桌面应用、浏览器界面、终端 Agent），并在此基础上增加了以下增强：
 
-- **token 速度指示器**：输入框工具栏显示实时 `tok/s`，悬停可查看首 token 平均 TTFT 与会话总用时
-- **上下文累计用量**：上下文弹窗中展示会话累计 token 总量与输入/输出/缓存读写分项
+- **Codex 推理档位滑块**：在外观设置中开启后，输入框模型菜单使用 Codex 风格滑块，支持蓝紫渐变、Fast 闪电与 Ultra 档位
+- **token 速度指示器**：输入框工具栏显示全会话平均 `tok/s`，悬停可查看平均 TTFT、样本轮数与整个会话总用时
+- **上下文累计用量**：上下文弹窗展示会话累计 token 总量、输入/输出/缓存读写分项、平均缓存命中率与来源占比
+- **深色空态标识**：首页空态 W 标识跟随主题绘制描边与渐变，深色模式下不再不可见
 - **模型显示名称**：可为模型自定义显示名，列表中不再只显示模型 ID
 - **自定义用户**：未登录时可用自定义头像与名称替代「连接使用」
 - **获取模型列表**：配置 API Key 供应商时可直接拉取远端模型列表并勾选批量添加
 
-本仓库为私有定制分支，上游为 [zai-org/ZCode](https://github.com/zai-org/ZCode)，遵循 Apache-2.0 协议。
+本仓库为公开的社区分支，上游为 [zai-org/ZCode](https://github.com/zai-org/ZCode)，遵循 Apache-2.0 协议。
+
+## 界面预览
+
+| Codex 推理档位（高 / 最高） | 上下文用量与来源占比 |
+| :---: | :---: |
+| <img src="docs/images/codex-slider-high.png" width="360" alt="Codex 推理档位 - 高" /><br /><img src="docs/images/codex-slider-ultra.png" width="360" alt="Codex 推理档位 - 最高" /> | <img src="docs/images/context-usage.png" width="320" alt="上下文用量与来源占比" /> |
+
+| 会话生成速度 | 深色空态 |
+| :---: | :---: |
+| <img src="docs/images/token-speed.png" width="320" alt="会话生成速度" /> | <img src="docs/images/dark-empty-state.png" width="520" alt="深色空态" /> |
 
 ## 与上游的差异
 
@@ -31,7 +43,8 @@ WCode 是基于 ZCode 的本地定制版本，保留 AI 编程工作台能力（
 
 ## 更新
 
-- **2026-11-03**：基于 ZCode v3.17.1 建立 WCode 定制分支。
+- **2026-11-04**：仓库更名为 WCode 并公开，主分支切换为 `main`；新增 Codex 推理档位滑块、上下文来源占比与深色空态标识。
+- **2026-11-03**：基于 ZCode v3.17.1 建立 WCode 分支。
 
 ## 初始化
 

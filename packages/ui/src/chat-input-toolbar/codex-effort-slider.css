@@ -140,8 +140,8 @@
 
 /* 手柄：白底 + 细边 + 投影，始终静止（插件本身无抖动动画）。 */
 .codex-effort-knob {
-  background: var(--color-card, #ffffff);
-  border: 0.5px solid var(--color-border, #e4e4e7);
+  background: var(--color-white, #ffffff);
+  border: 0.5px solid rgb(0 0 0 / 0.12);
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.16);
   transition:
     left 180ms cubic-bezier(0.2, 0.8, 0.2, 1),

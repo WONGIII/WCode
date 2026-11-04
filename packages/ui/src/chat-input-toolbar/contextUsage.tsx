@@ -1166,7 +1166,7 @@ export function ChatContextUsage({
                       >
                         <span
                           aria-hidden="true"
-                          className="size-2 shrink-0 rounded-sm border border-border"
+                          className="size-2 shrink-0 rounded-full border border-border"
                           style={getBreakdownToneStyle(index)}
                         />
                         <span className="min-w-0 truncate text-foreground-subtle">

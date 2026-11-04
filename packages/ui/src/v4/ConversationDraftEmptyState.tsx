@@ -11,7 +11,6 @@ import {
   useRef,
   useState,
 } from "react";
-import darkEmptyStateLogoUrl from "@/assets/Z.svg";
 import { cn } from "@/components/lib/utils.js";
 import { useZCodeIntl } from "@/i18n/IntlProvider.js";
 import { useIsOfficeMode } from "@/hooks/useInterfaceMode.js";
@@ -242,53 +241,45 @@ export function ConversationDraftEmptyState({
 }
 
 function ZCodeEmptyStateLogo({ className }: { className?: string }) {
+  // 修复原因：原先深色态使用 assets/Z.svg 位图作为背景，该资源的渐变是
+  // #444/#2A2A2A 深灰，落在深色底上几乎不可见。这里统一用 currentColor
+  // 线框，交由 text-foreground-subtlest 随主题取色，两套主题共用同一形状。
   return (
-    <>
-      {/* 修复原因：夜间资源已自带渐变和透明度，公共容器叠加遮罩会让它重复变淡；渐隐效果只属于浅色线框。 */}
-      <svg
-        aria-hidden="true"
-        className={cn(
-          className,
-          "opacity-70 dark:hidden",
-          "[-webkit-mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
-          "[-webkit-mask-repeat:no-repeat] [-webkit-mask-size:100%_100%]",
-          "[mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
-          "[mask-repeat:no-repeat] [mask-size:100%_100%]",
-        )}
-        width="400"
-        height="250"
-        viewBox="0 0 400 250"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        {/* 品牌字形从 Z 换成 W。W 的 bbox 是 710x435，按容器 88% 宽度等比缩放后居中。 */}
-        <g transform="translate(24 17.17) scale(0.49577) translate(-157 -294)">
-          <path
-            d="M 267.00 294.00 L 267.00 294.00 L 349.31 532.68 L 294.30 692.19 L 157.00 294.00 Z"
-            stroke="currentColor"
-          />
-          <path
-            d="M 307.00 729.00 L 307.00 729.00 L 444.30 330.81 L 499.31 490.32 L 417.00 729.00 Z"
-            stroke="currentColor"
-          />
-          <path
-            d="M 567.00 294.00 L 567.00 294.00 L 649.31 532.68 L 594.30 692.19 L 457.00 294.00 Z"
-            stroke="currentColor"
-          />
-          <path
-            d="M 607.00 729.00 L 607.00 729.00 L 757.00 294.00 L 867.00 294.00 L 717.00 729.00 Z"
-            stroke="currentColor"
-          />
-        </g>
-      </svg>
-      {/* 深色资源包含专用渐变与模糊效果，不能通过 currentColor 复刻；主题类保证两套 Logo 互斥显示。 */}
-      <img
-        aria-hidden="true"
-        className={cn(className, "hidden dark:block")}
-        data-v4-draft-logo="dark"
-        src={darkEmptyStateLogoUrl}
-        alt=""
-      />
-    </>
+    <svg
+      aria-hidden="true"
+      className={cn(
+        className,
+        "opacity-70",
+        "[-webkit-mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
+        "[-webkit-mask-repeat:no-repeat] [-webkit-mask-size:100%_100%]",
+        "[mask-image:linear-gradient(to_bottom,black_0%,transparent_70%,transparent_100%)]",
+        "[mask-repeat:no-repeat] [mask-size:100%_100%]",
+      )}
+      width="400"
+      height="250"
+      viewBox="0 0 400 250"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* 品牌字形从 Z 换成 W。W 的 bbox 是 710x435，按容器 88% 宽度等比缩放后居中。 */}
+      <g transform="translate(24 17.17) scale(0.49577) translate(-157 -294)">
+        <path
+          d="M 267.00 294.00 L 267.00 294.00 L 349.31 532.68 L 294.30 692.19 L 157.00 294.00 Z"
+          stroke="currentColor"
+        />
+        <path
+          d="M 307.00 729.00 L 307.00 729.00 L 444.30 330.81 L 499.31 490.32 L 417.00 729.00 Z"
+          stroke="currentColor"
+        />
+        <path
+          d="M 567.00 294.00 L 567.00 294.00 L 649.31 532.68 L 594.30 692.19 L 457.00 294.00 Z"
+          stroke="currentColor"
+        />
+        <path
+          d="M 607.00 729.00 L 607.00 729.00 L 757.00 294.00 L 867.00 294.00 L 717.00 729.00 Z"
+          stroke="currentColor"
+        />
+      </g>
+    </svg>
   );
 }

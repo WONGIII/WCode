@@ -240,6 +240,10 @@ node dist/zcode/debug/zcode/bin/zcode.mjs --web \
 | `apps/zcode-cli`                                     | Agent CLI、TUI、运行时与工具               |
 | `scripts`、`config`、`third-party`                   | 构建维护脚本、内置配置与第三方声明材料     |
 
+## 致谢
+
+- Codex 推理档位滑块的交互、文案、视觉与粒子动画（[`CodexEffortSlider.tsx`](packages/ui/src/chat-input-toolbar/CodexEffortSlider.tsx)、[`codex-effort-slider.css`](packages/ui/src/chat-input-toolbar/codex-effort-slider.css)）参考并移植自 [DSH-Codex-reasoning-effort-slider](https://github.com/bakabaicai/DSH-Codex-reasoning-effort-slider)（MIT License，Copyright (c) 2026 Nachoneko_miao），并按本项目的主题、菜单与交互做了改写。完整许可见其仓库 [LICENSE](https://github.com/bakabaicai/DSH-Codex-reasoning-effort-slider/blob/main/LICENSE)。
+
 ## 项目声明
 
 功能与优惠范围、维护规则、执行与数据风险，以及许可和第三方版权说明，详见 [NOTICE.md](NOTICE.md)。

@@ -45,10 +45,12 @@ export function ProviderModelListDialog({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setState({ status: "loading" });
     setFilter("");
+    setSubmitError(null);
     try {
       const result = await fetchModels();
       setState({ status: "ready", models: result.models });
@@ -105,9 +107,13 @@ export function ProviderModelListDialog({
       return;
     }
     setSubmitting(true);
+    setSubmitError(null);
     try {
       await onConfirm([...selected]);
       onOpenChange(false);
+    } catch (error) {
+      // 全部添加失败时保持弹窗和勾选，用户可以直接重试或取消。
+      setSubmitError(error instanceof Error ? error.message : String(error));
     } finally {
       setSubmitting(false);
     }
@@ -198,6 +204,12 @@ export function ProviderModelListDialog({
             </p>
           </div>
         )}
+
+        {submitError ? (
+          <p className="text-ui-base text-destructive" role="alert">
+            {submitError}
+          </p>
+        ) : null}
 
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} type="button" variant="ghost">

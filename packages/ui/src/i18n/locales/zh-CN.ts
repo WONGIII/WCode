@@ -4351,6 +4351,7 @@ const zhCN: Record<string, string> = {
   "settings.modelProvider.modelList.alreadyAdded": "已添加",
   "settings.modelProvider.modelList.selectedCount": "已选择 {count} 个",
   "settings.modelProvider.modelList.confirm": "添加所选项（{count}）",
+  "settings.modelProvider.modelList.addFailed": "所选模型均未能添加，请检查模型配置后重试。",
   "settings.modelProvider.modelApiFormat.anthropic": "Anthropic Messages",
   "settings.modelProvider.modelApiFormat.openaiCompatible": "OpenAI Compatible",
   "settings.modelProvider.modelApiFormat.openaiResponses": "OpenAI Responses",

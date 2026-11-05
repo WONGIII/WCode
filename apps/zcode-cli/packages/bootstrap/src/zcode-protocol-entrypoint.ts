@@ -357,8 +357,11 @@ export async function runZCodeProtocolAgent(
         await activeProviderRegistryRuntime.runtime.registryService.refresh(reason);
       },
       // 「获取模型列表」读 baseUrl/apiKey 用；凭证不外传，请求在 CLI 侧发出。
+      // 用配置解析快照而不是 Registry 可执行视图：后者会过滤未启用/零模型供应商，
+      // 导致新建供应商在添加首个模型前无法拉取列表。
       readProviderConfigSnapshot: () =>
-        activeProviderRegistryRuntime.runtime.registryService.getView().providers,
+        activeProviderRegistryRuntime.runtime.registryService.getSnapshot()?.resolution
+          .resolvedProviders ?? [],
       version: options.version,
     }));
     officialMcpAuthContext = server.officialMcpAuthRequestContext;

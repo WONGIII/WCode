@@ -106,12 +106,50 @@ export function useProviderModelDraft({
       draft: projectModelDraft(rawDraft, resolvedModel),
     });
   };
+  /**
+   * 直接提交指定模型，不读取 React 草稿状态。
+   *
+   * 批量添加会在同一个事件循环里连续提交多个模型；reset() 只调度 setRawDraft，
+   * 立即调用 commit() 仍会闭包读取上一份草稿，结果全部被判为 invalid。
+   * 因此这里显式使用传入模型重新解析推荐配置并生成提交数据。
+   */
+  const commitModel = async (nextModel: ProviderSettingsFormModel) => {
+    editGeneration.current += 1;
+    config.cancel();
+    const nextModelId = nextModel.modelId.trim();
+    const requiresResolution =
+      nextModel.useRecommendedConfig !== false &&
+      Boolean(resolve) &&
+      nextModelId !== originalModelId;
+    if (!requiresResolution) {
+      const projectedDraft = projectModelDraft(
+        createProviderModelDraftValues(nextModel),
+        nextModel,
+      );
+      setRawDraft(projectedDraft);
+      return resolveProviderModelDraftCommit({ currentModel: nextModel, draft: projectedDraft });
+    }
+    const resolution = await resolveRef.current?.(nextModelId, {});
+    if (!resolution) throw new Error("Model Config Resolution 尚未就绪");
+    const resolvedModel: ProviderSettingsFormModel = {
+      ...nextModel,
+      inheritedConfig: resolution.inheritedConfig,
+      config: resolution.inheritedConfig,
+    };
+    const projectedDraft = projectModelDraft(
+      createProviderModelDraftValues(nextModel),
+      resolvedModel,
+    );
+    setRawDraft(projectedDraft);
+    return resolveProviderModelDraftCommit({ currentModel: resolvedModel, draft: projectedDraft });
+  };
   return {
     draft,
     change,
     reset,
     restore,
     commit,
+    commitModel,
     overrides: modelDraftOverrides(draft),
     inheritedConfig: currentModel.inheritedConfig,
     pending:

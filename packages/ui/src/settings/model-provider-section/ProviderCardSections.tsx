@@ -613,18 +613,33 @@ export function ProviderModelsSection({
             return onFetchProviderModels(providerId);
           }}
           onConfirm={async (modelIds) => {
-            // 复用「添加模型」同一条 commit 链路：逐个把模型 ID 写进添加草稿后提交，
-            // 保证批量新增的默认配置解析与手动逐个添加完全一致。
+            // 复用「添加模型」同一条提交链路，但必须显式传入模型：reset() 只调度状态，
+            // 连续 reset+commit 会读到同一份旧草稿，导致所有勾选项被判为无效。
+            let addedCount = 0;
             for (const modelId of modelIds) {
-              editor.reset({ ...createEmptyModel(), modelId });
-              const result = await editor.commit();
-              if (result.status === "invalid") {
-                // 单个模型解析失败时跳过，不影响其余已选模型。
+              const nextModel = { ...createEmptyModel(), modelId };
+              try {
+                const result = await editor.commitModel(nextModel);
+                if (result.status === "invalid") {
+                  // 单个模型解析失败时跳过，不影响其余已选模型。
+                  continue;
+                }
+                await onAddModel(result.model);
+                addedCount += 1;
+              } catch {
+                // 推荐配置解析或保存失败时跳过该项；保存失败原因由 onAddModel 的通知展示。
                 continue;
               }
-              await onAddModel(result.model);
             }
             editor.reset(createEmptyModel());
+            if (addedCount === 0 && modelIds.length > 0) {
+              // 全部失败时把弹窗留在原地并给出可见反馈，避免用户误以为已完成添加。
+              throw new Error(
+                intl.formatMessage({
+                  id: "settings.modelProvider.modelList.addFailed",
+                }),
+              );
+            }
           }}
           onOpenChange={setModelListDialogOpen}
           open={modelListDialogOpen}

@@ -4661,6 +4661,7 @@ const enUS: Record<string, string> = {
   "settings.modelProvider.modelList.alreadyAdded": "Added",
   "settings.modelProvider.modelList.selectedCount": "{count} selected",
   "settings.modelProvider.modelList.confirm": "Add selected ({count})",
+  "settings.modelProvider.modelList.addFailed": "None of the selected models could be added. Check the model configuration and try again.",
   "settings.modelProvider.modelApiFormat.anthropic": "Anthropic messages",
   "settings.modelProvider.modelApiFormat.openaiCompatible": "OpenAI Compatible",
   "settings.modelProvider.modelApiFormat.openaiResponses": "OpenAI Responses",

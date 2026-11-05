@@ -13,7 +13,7 @@ import {
 import type { McpTelemetryTracker } from "@zcode/adapters";
 import type { SessionDataFilesPort } from "@zcode/adapters/storage";
 import type { WorkspaceHookPolicyProvider } from "@zcode/core";
-import type { AccountProviderConfigSnapshot, Provider } from "@zcode/provider";
+import type { AccountProviderConfigSnapshot, ResolvedProvider } from "@zcode/provider";
 import {
   zcodeProtocolErrorCodes,
   type AppToolSearchMode,
@@ -70,12 +70,14 @@ export interface ZCodeProtocolAgentDependencies {
   /** 连接测试前主动重读当前进程的 Config Source 并等待 Registry 发布。 */
   refreshProviderRegistry?: (reason: string) => Promise<void>;
   /**
-   * 读取当前进程 Registry 的 Provider 快照。
+   * 读取当前进程 Provider 配置解析快照。
    *
    * 只给「获取模型列表」这类需要读 baseUrl/apiKey 的只读能力用；
    * 凭证不返回给渲染进程，请求仍在 CLI 侧发出。
+   * 必须包含未启用和零模型的供应商——Registry 可执行视图会过滤它们，
+   * 新供应商在添加首个模型前仍需能拉取模型列表。
    */
-  readProviderConfigSnapshot?: () => readonly Provider[];
+  readProviderConfigSnapshot?: () => readonly ResolvedProvider[];
 }
 
 export type ZCodeProtocolAgentResolvedDependencies = ZCodeProtocolAgentDependencies & {

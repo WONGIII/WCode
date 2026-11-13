@@ -3,6 +3,7 @@ import { logger } from "@/logger.js";
 
 export type SettingsSectionId =
   | "general"
+  | "agentBehavior"
   | "appearance"
   | "customUser"
   | "migration"
@@ -18,6 +19,7 @@ export type SettingsSectionId =
   | "plugins"
   | "projects"
   | "archives"
+  | "shares"
   | "usage"
   | "subagents"
   | "commands"
@@ -70,6 +72,7 @@ export interface SettingsModelProviderTarget {
 function isSettingsSectionId(value: string): value is SettingsSectionId {
   return (
     value === "general" ||
+    value === "agentBehavior" ||
     value === "appearance" ||
     value === "migration" ||
     value === "browser" ||
@@ -84,6 +87,7 @@ function isSettingsSectionId(value: string): value is SettingsSectionId {
     value === "plugins" ||
     value === "projects" ||
     value === "archives" ||
+    value === "shares" ||
     value === "usage" ||
     value === "subagents" ||
     value === "commands" ||

@@ -79,9 +79,15 @@ export function inspectProviderFailure(error: unknown): ProviderFailureDetails {
     : {};
 }
 
+export interface ModelFailureClassificationOptions {
+  /** 503 是否仍按响应体文案归为 context_exceeded；默认 true（保持上游行为）。 */
+  classify503AsContextExceeded?: boolean;
+}
+
 export function classifyModelFailure(
   error: unknown,
   abortSignal?: AbortSignal,
+  options: ModelFailureClassificationOptions = {},
 ): ClassifiedModelFailure {
   const unwrapped = unwrapRetryError(error);
   const statusCode = getStatusCode(unwrapped);
@@ -152,6 +158,7 @@ export function classifyModelFailure(
     findProviderBusinessError(unwrapped) ?? unwrapped,
     statusCode,
     retryAfterMs,
+    options,
   );
   if (providerBusinessFailure) {
     return providerBusinessFailure;
@@ -163,6 +170,7 @@ export function classifyModelFailure(
     readMappedAiSdkProviderBusinessError(unwrapped),
     statusCode,
     retryAfterMs,
+    options,
   );
   if (aiSdkErrorFailure) {
     return aiSdkErrorFailure;
@@ -174,6 +182,7 @@ export function classifyModelFailure(
     unwrapped,
     statusCode,
     retryAfterMs,
+    options,
   );
   if (apiCallBodyFailure) {
     return apiCallBodyFailure;
@@ -244,7 +253,11 @@ export function classifyModelFailure(
     };
   }
 
-  if (isContextExceededFailure(unwrapped)) {
+  // 503 是服务端/上游错误。部分网关把上游超时包装成 “context deadline exceeded”，
+  // 旧逻辑会把它当上下文超限并触发 reactive compact；开关关闭时交给下面的 5xx 分支重试。
+  const skipContextExceededDetection =
+    statusCode === 503 && options.classify503AsContextExceeded === false;
+  if (!skipContextExceededDetection && isContextExceededFailure(unwrapped)) {
     return {
       code: ModelErrorCode.ModelContextExceeded,
       message: "Model request exceeded the provider context window.",
@@ -324,6 +337,7 @@ function classifyProviderBusinessFailureFromApiCallBody(
   error: unknown,
   statusCode?: number,
   retryAfterMs?: number,
+  options: ModelFailureClassificationOptions = {},
 ): ClassifiedModelFailure | undefined {
   const body = getApiCallResponseBody(error);
   const detected = readProviderBusinessFailureFromBody(body);
@@ -344,6 +358,7 @@ function classifyProviderBusinessFailureFromApiCallBody(
     }),
     statusCode ?? detected.statusCode,
     retryAfterMs,
+    options,
   );
 }
 
@@ -351,6 +366,7 @@ function classifyProviderBusinessFailure(
   error: unknown,
   statusCode?: number,
   retryAfterMs?: number,
+  options: ModelFailureClassificationOptions = {},
 ): ClassifiedModelFailure | undefined {
   if (!isProviderBusinessError(error)) {
     return undefined;
@@ -372,7 +388,9 @@ function classifyProviderBusinessFailure(
     };
   }
 
-  if (isContextExceededFailure(error)) {
+  const skipContextExceededDetection =
+    effectiveStatusCode === 503 && options.classify503AsContextExceeded === false;
+  if (!skipContextExceededDetection && isContextExceededFailure(error)) {
     return {
       code: ModelErrorCode.ModelContextExceeded,
       message: "Model request exceeded the provider context window.",

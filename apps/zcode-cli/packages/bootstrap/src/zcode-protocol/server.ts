@@ -132,6 +132,7 @@ import { listPluginUiSurfaces } from "./plugin-ui-surfaces.js";
 import { updateInteractionPreferences } from "./interaction-preferences.js";
 import { refreshProviderRegistry, updateAccountProviderConfig } from "./account-provider-config.js";
 import { updateModelIoPreferences } from "./model-io-preferences.js";
+import { updateFailureHandlingPreferences } from "./failure-handling-preferences.js";
 import { updateOffPeakToolPolicy } from "./off-peak-tool-policy.js";
 import { updateDynamicWorkflowPolicy } from "./dynamic-workflow-policy.js";
 import { grantWorkspaceHookTrustForProtocol } from "./workspace-hook-trust.js";
@@ -358,6 +359,7 @@ export class ZCodeProtocolAgentServer {
       appRuntimePreferences: {
         askUserQuestionAutoResolutionEnabled: true,
         modelIoFullRetentionEnabled: false,
+        classify503AsContextExceeded: true,
         offPeakToolEnabled: false,
         // 动态工作流灰度门 fail-closed：Host 必须显式 workspace/updateDynamicWorkflowPolicy
         // 才开启。
@@ -877,6 +879,8 @@ export class ZCodeProtocolAgentServer {
         return await updateInteractionPreferences(this.context, request.params);
       case zcodeProtocolMethods.workspaceUpdateModelIoPreferences:
         return await updateModelIoPreferences(this.context, request.params);
+      case zcodeProtocolMethods.workspaceUpdateFailureHandlingPreferences:
+        return await updateFailureHandlingPreferences(this.context, request.params);
       case zcodeProtocolMethods.workspaceUpdateOffPeakToolPolicy:
         return await updateOffPeakToolPolicy(this.context, request.params);
       case zcodeProtocolMethods.workspaceUpdateDynamicWorkflowPolicy:

@@ -15,6 +15,7 @@ export const appRuntimePreferencesChangedBroadcastPayloadSchema = z
   .object({
     askUserQuestionAutoResolutionEnabled: z.boolean(),
     modelIoFullRetentionEnabled: z.boolean().default(false),
+    classify503AsContextExceeded: z.boolean().default(true),
     pluginAutoRecommendationEnabled: z.boolean().default(false),
   })
   .strict();

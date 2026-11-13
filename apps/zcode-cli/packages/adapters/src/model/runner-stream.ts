@@ -114,6 +114,7 @@ export async function* runStreamText(input: {
   statusSink?: ModelStatusSink;
   streamIdleTimeoutMs: number;
   modelIoFullRetentionEnabled: boolean;
+  classify503AsContextExceeded: boolean;
 }): AsyncGenerator<ModelStreamEvent> {
   // 重试预算档位：只放宽瞬态失败的放弃条件；
   // `emittedRetryBoundaryEvent` 之后不重试的规则不变。状态事件 maxAttempts 以 0 表示无上限。
@@ -302,7 +303,9 @@ export async function* runStreamText(input: {
       });
     } catch (admitError) {
       attemptAbortController.cleanup();
-      const admitFailure = classifyModelFailure(admitError, input.request.abortSignal);
+      const admitFailure = classifyModelFailure(admitError, input.request.abortSignal, {
+        classify503AsContextExceeded: input.classify503AsContextExceeded,
+      });
       await publishModelStatus(
         {
           ...statusContext,
@@ -561,6 +564,7 @@ export async function* runStreamText(input: {
           const failure = classifyModelFailure(
             hiddenProviderBusinessError,
             input.request.abortSignal,
+            { classify503AsContextExceeded: input.classify503AsContextExceeded },
           );
           throw new TerminalStreamChunkError(
             toAdapterError(hiddenProviderBusinessError, failure, statusContext, attempt, {
@@ -595,6 +599,7 @@ export async function* runStreamText(input: {
             const failure = classifyModelFailure(
               streamEndedWithoutOutputError,
               input.request.abortSignal,
+              { classify503AsContextExceeded: input.classify503AsContextExceeded },
             );
             throw new TerminalStreamChunkError(
               toAdapterError(streamEndedWithoutOutputError, failure, statusContext, attempt, {
@@ -761,7 +766,9 @@ export async function* runStreamText(input: {
           maxAttempts: statusMaxAttempts(1 + authRetry.extraAttempts),
         };
       }
-      const classified = classifyModelFailure(error, input.request.abortSignal);
+      const classified = classifyModelFailure(error, input.request.abortSignal, {
+        classify503AsContextExceeded: input.classify503AsContextExceeded,
+      });
       if (error instanceof RuntimeHeadersRefreshError) {
         classified.message = error.message;
         classified.retryable = error.retryable;
@@ -946,7 +953,9 @@ export async function* runStreamText(input: {
       try {
         await sleep(delayMs, input.request.abortSignal);
       } catch (sleepError) {
-        const sleepFailure = classifyModelFailure(sleepError, input.request.abortSignal);
+        const sleepFailure = classifyModelFailure(sleepError, input.request.abortSignal, {
+          classify503AsContextExceeded: input.classify503AsContextExceeded,
+        });
         await publishModelStatus(
           {
             ...statusContext,
@@ -1120,6 +1129,7 @@ async function handleStreamChunk(input: {
     resolved: ResolvedAiSdkModel;
     retry: ResolvedAiSdkModelRetryOptions;
     statusSink?: ModelStatusSink;
+    classify503AsContextExceeded: boolean;
   };
   pendingRetrySafeEvents: ModelStreamEvent[];
   repairThinkingSignatureRejection: (error: unknown) => boolean;
@@ -1331,7 +1341,9 @@ async function handleStreamErrorEvent(
         ),
       }
     : input.statusContext;
-  const classified = classifyModelFailure(error, input.input.request.abortSignal);
+  const classified = classifyModelFailure(error, input.input.request.abortSignal, {
+    classify503AsContextExceeded: input.input.classify503AsContextExceeded,
+  });
   // off-peak 特判：SSE 首块即错（尚无可见输出）时的排队 429 同样豁免预算重试。
   const offPeak = resolveOffPeakFailureDecision({
     offPeak: input.input.resolved.accountAccess?.mode === "off-peak",
@@ -1469,7 +1481,9 @@ async function handleStreamErrorEvent(
   try {
     await sleep(delayMs, input.input.request.abortSignal);
   } catch (sleepError) {
-    const sleepFailure = classifyModelFailure(sleepError, input.input.request.abortSignal);
+    const sleepFailure = classifyModelFailure(sleepError, input.input.request.abortSignal, {
+      classify503AsContextExceeded: input.input.classify503AsContextExceeded,
+    });
     // SSE error chunk 在 helper 内等待 retry；取消发生时 iterator 仍存在，
     // 外层仅按 iterator 判断会误记为 stream。先在真实等待边界写入 connect 事实。
     throw toAdapterError(sleepError, sleepFailure, statusContext, input.attempt, {

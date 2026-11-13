@@ -345,6 +345,8 @@ export interface AppSettings {
   pluginAutoRecommendationEnabled?: boolean;
   /** 是否完整保留 Model I/O；开启后不轮转、不限额重置、不压缩或裁剪，鉴权信息仍会脱敏。 */
   modelIoFullRetentionEnabled?: boolean;
+  /** HTTP 503 响应体命中上下文超限文案时，是否仍归为 context_exceeded；默认开启。 */
+  classify503AsContextExceeded?: boolean;
   /**
    * 用户选的动态工作流模式（docs/dynamic-workflow/launch.md「The user's choice」）。缺席 = 跟随服务端
    * 提供的模式；只在功能已提供时生效。选回提供的模式时删除该字段，未改动的安装继续跟随服务端翻转。

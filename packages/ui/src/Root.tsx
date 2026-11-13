@@ -414,6 +414,7 @@ function RootInner({
         askUserQuestionAutoResolutionEnabled:
           appSettings.askUserQuestionAutoResolutionEnabled !== false,
         modelIoFullRetentionEnabled: appSettings.modelIoFullRetentionEnabled === true,
+        classify503AsContextExceeded: appSettings.classify503AsContextExceeded !== false,
         pluginAutoRecommendationEnabled: appSettings.pluginAutoRecommendationEnabled === true,
       })
       .catch((error) => {
@@ -424,6 +425,7 @@ function RootInner({
         askUserQuestionAutoResolutionEnabled:
           appSettings.askUserQuestionAutoResolutionEnabled !== false,
         modelIoFullRetentionEnabled: appSettings.modelIoFullRetentionEnabled === true,
+        classify503AsContextExceeded: appSettings.classify503AsContextExceeded !== false,
         pluginAutoRecommendationEnabled: appSettings.pluginAutoRecommendationEnabled === true,
       })
       .catch((error) => {
@@ -432,6 +434,7 @@ function RootInner({
   }, [
     appSettings?.askUserQuestionAutoResolutionEnabled,
     appSettings?.modelIoFullRetentionEnabled,
+    appSettings?.classify503AsContextExceeded,
     appSettings?.pluginAutoRecommendationEnabled,
     services.botsService,
     services.zcodeAgentService,

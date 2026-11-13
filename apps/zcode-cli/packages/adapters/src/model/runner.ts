@@ -74,6 +74,8 @@ export interface AiSdkModelAdapterOptions {
   statusSink?: ModelStatusSink;
   streamIdleTimeoutMs?: number;
   modelIoFullRetentionEnabled?: boolean;
+  /** 503 响应体命中 context/exceed 文案时是否仍归为 context_exceeded；默认 true。 */
+  classify503AsContextExceeded?: boolean;
 }
 
 export interface CreateAiSdkModelOptions {
@@ -96,6 +98,7 @@ export class AiSdkModelAdapter {
   private statusSink?: ModelStatusSink;
   private readonly streamIdleTimeoutMs: number;
   private modelIoFullRetentionEnabled: boolean;
+  private classify503AsContextExceeded: boolean;
 
   constructor(options: AiSdkModelAdapterOptions) {
     this.execution = new AiSdkModelExecution(
@@ -124,10 +127,15 @@ export class AiSdkModelAdapter {
     this.statusSink = options.statusSink;
     this.streamIdleTimeoutMs = options.streamIdleTimeoutMs ?? DEFAULT_MODEL_STREAM_IDLE_TIMEOUT_MS;
     this.modelIoFullRetentionEnabled = options.modelIoFullRetentionEnabled ?? false;
+    this.classify503AsContextExceeded = options.classify503AsContextExceeded ?? true;
   }
 
   setModelIoFullRetentionEnabled(enabled: boolean): void {
     this.modelIoFullRetentionEnabled = enabled;
+  }
+
+  setClassify503AsContextExceeded(enabled: boolean): void {
+    this.classify503AsContextExceeded = enabled;
   }
 
   addStatusSink(sink: ModelStatusSink): void {
@@ -341,6 +349,7 @@ export class AiSdkModelAdapter {
       runtime: this.runtime,
       statusSink: this.statusSink,
       modelIoFullRetentionEnabled: this.modelIoFullRetentionEnabled,
+      classify503AsContextExceeded: this.classify503AsContextExceeded,
     });
   }
 
@@ -363,6 +372,7 @@ export class AiSdkModelAdapter {
       statusSink: this.statusSink,
       streamIdleTimeoutMs: this.streamIdleTimeoutMs,
       modelIoFullRetentionEnabled: this.modelIoFullRetentionEnabled,
+      classify503AsContextExceeded: this.classify503AsContextExceeded,
     });
   }
 }

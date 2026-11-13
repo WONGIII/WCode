@@ -2274,6 +2274,11 @@ exceptions:
       - packages/shared/src/session-debug.ts
       - apps/zcode-cli/packages/bootstrap/src/zcode-protocol/session-debug.ts
     reason: 已存在的调试快照协议与采集文件只新增可选 sessionTotals 字段/聚合，供 token/s 弹窗用全量 model_usage 计算整个会话总用时、平均速度与 TTFT；原有 rounds/networkEntries 契约与 owner 不变，接管 shared 或 bootstrap 目录不在本次范围。
+  - id: failure-classification-preferences-unmanaged-new-file
+    rule: unmanaged-new-file
+    paths:
+      - apps/zcode-cli/packages/bootstrap/src/zcode-protocol/failure-handling-preferences.ts
+    reason: 「503 是否归为 context_exceeded」需要一条与 model-io-preferences 同构的 App 全局偏好同步路径；新文件只解析协议参数、缓存偏好并更新已有 session 的 adapter setter，不改动 provider/model 状态 owner。接管整个 bootstrap 未受管模块不属于本次设置开关范围。
   - id: ui-more-locales-new-files
     rule: unmanaged-new-file
     paths:

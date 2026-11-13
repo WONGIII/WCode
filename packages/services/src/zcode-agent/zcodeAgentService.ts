@@ -190,6 +190,7 @@ import {
   zcodeWorkspaceHookTrustGrantResultSchema,
   zcodeWorkspaceUpdateInteractionPreferencesResultSchema,
   zcodeWorkspaceUpdateModelIoPreferencesResultSchema,
+  zcodeWorkspaceUpdateFailureHandlingPreferencesResultSchema,
   zcodeProviderUpdateAccountConfigResultSchema,
   type ZCodeSessionStateSnapshot,
   type ZCodeAutomation,
@@ -2098,6 +2099,17 @@ export function createZCodeAgentService(
               },
             },
             zcodeWorkspaceUpdateModelIoPreferencesResultSchema,
+          );
+          await params.client.request(
+            zcodeProtocolMethods.workspaceUpdateFailureHandlingPreferences,
+            {
+              workspace: buildWorkspaceRef(params.workspace),
+              preferences: {
+                classify503AsContextExceeded:
+                  params.preferences.classify503AsContextExceeded !== false,
+              },
+            },
+            zcodeWorkspaceUpdateFailureHandlingPreferencesResultSchema,
           );
         } catch (error) {
           // 新 Host 兼容尚未升级的 CLI：只有 method-not-found 可降级，其他同步失败仍需上抛。
@@ -4645,6 +4657,7 @@ export function createZCodeAgentService(
       const normalizedPreferences: ZCodeAgentAppRuntimePreferences = {
         ...preferences,
         modelIoFullRetentionEnabled: preferences.modelIoFullRetentionEnabled === true,
+        classify503AsContextExceeded: preferences.classify503AsContextExceeded !== false,
         pluginAutoRecommendationEnabled: preferences.pluginAutoRecommendationEnabled === true,
       };
       latestAppRuntimePreferences = normalizedPreferences;

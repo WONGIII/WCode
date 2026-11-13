@@ -798,12 +798,14 @@ export function AgentBehaviorSectionContent({
   zcodeInteractionBehavior,
   askUserQuestionAutoResolutionEnabled = true,
   modelIoFullRetentionEnabled = false,
+  classify503AsContextExceeded = true,
   onNativeSearchEnhancementsEnabledChange,
   onMessageStreamShowReasoningChange,
   onMessageStreamShowTodosChange,
   onZCodeInteractionBehaviorChange,
   onAskUserQuestionAutoResolutionEnabledChange = async () => {},
   onModelIoFullRetentionEnabledChange = async () => {},
+  onClassify503AsContextExceededChange = async () => {},
 }: {
   toolSearchMode?: AppToolSearchMode;
   onToolSearchModeChange: (mode: AppToolSearchMode) => Promise<void>;
@@ -813,12 +815,14 @@ export function AgentBehaviorSectionContent({
   zcodeInteractionBehavior: ZCodeInteractionBehavior;
   askUserQuestionAutoResolutionEnabled?: boolean;
   modelIoFullRetentionEnabled?: boolean;
+  classify503AsContextExceeded?: boolean;
   onNativeSearchEnhancementsEnabledChange: (enabled: boolean) => Promise<void>;
   onMessageStreamShowReasoningChange: (enabled: boolean) => Promise<void>;
   onMessageStreamShowTodosChange: (enabled: boolean) => Promise<void>;
   onZCodeInteractionBehaviorChange: (behavior: ZCodeInteractionBehavior) => Promise<void>;
   onAskUserQuestionAutoResolutionEnabledChange?: (enabled: boolean) => Promise<void>;
   onModelIoFullRetentionEnabledChange?: (enabled: boolean) => Promise<void>;
+  onClassify503AsContextExceededChange?: (enabled: boolean) => Promise<void>;
 }) {
   const { intl } = useZCodeIntl();
   const hasServices = Boolean(useOptionalServices());
@@ -951,6 +955,23 @@ export function AgentBehaviorSectionContent({
               checked={modelIoFullRetentionEnabled}
               onCheckedChange={(checked) => {
                 void onModelIoFullRetentionEnabledChange(checked);
+              }}
+            />
+          }
+        />
+        <SettingsRow
+          searchId="settings.classify503AsContextExceeded"
+          label={intl.formatMessage({ id: "settings.classify503AsContextExceeded" })}
+          description={intl.formatMessage({
+            id: "settings.classify503AsContextExceededDescription",
+          })}
+          control={
+            <Switch
+              aria-label={intl.formatMessage({ id: "settings.classify503AsContextExceeded" })}
+              checked={classify503AsContextExceeded}
+              data-testid="settings-classify-503-context-exceeded-switch"
+              onCheckedChange={(checked) => {
+                void onClassify503AsContextExceededChange(checked);
               }}
             />
           }

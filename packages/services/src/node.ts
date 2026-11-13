@@ -2853,6 +2853,7 @@ export function createLocalServices(options: {
             askUserQuestionAutoResolutionEnabled:
               settings.askUserQuestionAutoResolutionEnabled !== false,
             modelIoFullRetentionEnabled: settings.modelIoFullRetentionEnabled === true,
+            classify503AsContextExceeded: settings.classify503AsContextExceeded !== false,
             pluginAutoRecommendationEnabled: settings.pluginAutoRecommendationEnabled === true,
           };
         },

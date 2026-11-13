@@ -159,6 +159,8 @@ export interface ZCodeProtocolAgentServerContext {
   appRuntimePreferences: {
     askUserQuestionAutoResolutionEnabled: boolean;
     modelIoFullRetentionEnabled: boolean;
+    /** 503 响应体命中 context/exceed 文案时是否仍归为 context_exceeded。 */
+    classify503AsContextExceeded: boolean;
     /** host 同步的 Off-Peak 工具面门禁；缺省 false（fail-closed），供 v4 冷恢复等无 host 参数的路径读取。 */
     offPeakToolEnabled: boolean;
     /**

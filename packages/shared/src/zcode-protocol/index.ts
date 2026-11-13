@@ -2794,6 +2794,36 @@ export type ZCodeWorkspaceUpdateModelIoPreferencesResult = z.infer<
   typeof zcodeWorkspaceUpdateModelIoPreferencesResultSchema
 >;
 
+export const zcodeFailureHandlingPreferencesSchema = z
+  .object({
+    classify503AsContextExceeded: z.boolean(),
+  })
+  .strict();
+export type ZCodeFailureHandlingPreferences = z.infer<
+  typeof zcodeFailureHandlingPreferencesSchema
+>;
+
+export const zcodeWorkspaceUpdateFailureHandlingPreferencesParamsSchema = z
+  .object({
+    workspace: zcodeWorkspaceRefSchema,
+    preferences: zcodeFailureHandlingPreferencesSchema,
+  })
+  .strict();
+export type ZCodeWorkspaceUpdateFailureHandlingPreferencesParams = z.infer<
+  typeof zcodeWorkspaceUpdateFailureHandlingPreferencesParamsSchema
+>;
+
+export const zcodeWorkspaceUpdateFailureHandlingPreferencesResultSchema = z
+  .object({
+    workspace: zcodeWorkspaceRefSchema,
+    classify503AsContextExceeded: z.boolean(),
+    updatedSessionCount: z.number().int().nonnegative(),
+  })
+  .strict();
+export type ZCodeWorkspaceUpdateFailureHandlingPreferencesResult = z.infer<
+  typeof zcodeWorkspaceUpdateFailureHandlingPreferencesResultSchema
+>;
+
 export const zcodeWorkspaceUpdateOffPeakToolPolicyParamsSchema = z
   .object({
     workspace: zcodeWorkspaceRefSchema,
@@ -4435,6 +4465,7 @@ export const zcodeProtocolMethods = {
   providerRefreshRegistry: "provider/refreshRegistry",
   workspaceUpdateInteractionPreferences: "workspace/updateInteractionPreferences",
   workspaceUpdateModelIoPreferences: "workspace/updateModelIoPreferences",
+  workspaceUpdateFailureHandlingPreferences: "workspace/updateFailureHandlingPreferences",
   // Off-Peak 工具面门禁是 workspace 级事实（灰度 + 本地/远程），由 host 在 agent 就绪时同步；
   // CLI 对 legacy create/resume 与 v4 冷恢复统一读取。旧 CLI method-not-found → host 降级忽略。
   workspaceUpdateOffPeakToolPolicy: "workspace/updateOffPeakToolPolicy",

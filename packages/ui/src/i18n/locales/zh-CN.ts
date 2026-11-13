@@ -3752,6 +3752,9 @@ const zhCN: Record<string, string> = {
   "settings.modelIoFullRetention": "完整保留模型 I/O",
   "settings.modelIoFullRetentionDescription":
     "保留完整的模型请求和响应，不自动压缩、限制大小或删除旧记录。",
+  "settings.classify503AsContextExceeded": "503 响应归为上下文超限",
+  "settings.classify503AsContextExceededDescription":
+    "开启时，HTTP 503 响应若包含 context/exceed 文案仍按上下文超限处理并触发压缩；关闭后按可重试的服务端错误处理。",
   "settings.performanceMode": "性能模式",
   "settings.performanceModeDescription": "精简渲染输出，提高性能。",
   "settings.taskAutoArchive": "自动归档旧会话",

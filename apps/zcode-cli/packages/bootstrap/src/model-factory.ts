@@ -13,6 +13,7 @@ interface CreateModelAdapterBaseOptions {
   logger?: Logger;
   modelIoDir?: string;
   modelIoFullRetentionEnabled?: boolean;
+  classify503AsContextExceeded?: boolean;
   streamIdleTimeoutMs?: number;
   statusSink?: ModelStatusSink;
 }
@@ -35,6 +36,7 @@ export function createModelAdapter(options: CreateModelAdapterOptions): AiSdkMod
     env: options.env,
     logger: options.logger,
     modelIoFullRetentionEnabled: options.modelIoFullRetentionEnabled,
+    classify503AsContextExceeded: options.classify503AsContextExceeded,
     streamIdleTimeoutMs: options.streamIdleTimeoutMs,
     statusSink: options.statusSink,
   });

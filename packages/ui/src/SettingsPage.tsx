@@ -829,6 +829,7 @@ export function SettingsPage({
   const askUserQuestionAutoResolutionEnabled =
     sharedSettings?.askUserQuestionAutoResolutionEnabled !== false;
   const modelIoFullRetentionEnabled = sharedSettings?.modelIoFullRetentionEnabled === true;
+  const classify503AsContextExceeded = sharedSettings?.classify503AsContextExceeded !== false;
   const [dataBaseDir, setDataBaseDir] = useState("");
   const [terminalInheritSystemProfile, setTerminalInheritSystemProfile] = useState(true);
   const [terminalFontFamily, setTerminalFontFamily] = useState("");
@@ -1087,6 +1088,21 @@ export function SettingsPage({
         action: "toggle_model_io_retention",
         trigger: "switch",
         operation: () => updateSharedSettings({ modelIoFullRetentionEnabled: enabled }),
+        completed: {
+          resultSource: "shared_settings",
+          stateAfter: enabled ? "enabled" : "disabled",
+        },
+      });
+    },
+    [updateSharedSettings],
+  );
+  const handleClassify503AsContextExceededChange = useCallback(
+    async (enabled: boolean) => {
+      await runSettingsActionAsync({
+        featureId: "settings.conversation",
+        action: "toggle_classify_503_context_exceeded",
+        trigger: "switch",
+        operation: () => updateSharedSettings({ classify503AsContextExceeded: enabled }),
         completed: {
           resultSource: "shared_settings",
           stateAfter: enabled ? "enabled" : "disabled",
@@ -1899,6 +1915,7 @@ export function SettingsPage({
                                 askUserQuestionAutoResolutionEnabled
                               }
                               modelIoFullRetentionEnabled={modelIoFullRetentionEnabled}
+                              classify503AsContextExceeded={classify503AsContextExceeded}
                               onMessageStreamShowReasoningChange={
                                 handleMessageStreamShowReasoningChange
                               }
@@ -1911,6 +1928,9 @@ export function SettingsPage({
                               }
                               onModelIoFullRetentionEnabledChange={
                                 handleModelIoFullRetentionEnabledChange
+                              }
+                              onClassify503AsContextExceededChange={
+                                handleClassify503AsContextExceededChange
                               }
                             />
                           ) : activeSection === "dataSync" ? (

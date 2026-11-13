@@ -686,6 +686,7 @@ export type ZCodeAgentServiceEvent =
 export interface ZCodeAgentAppRuntimePreferences {
   askUserQuestionAutoResolutionEnabled: boolean;
   modelIoFullRetentionEnabled?: boolean;
+  classify503AsContextExceeded?: boolean;
   pluginAutoRecommendationEnabled?: boolean;
 }
 

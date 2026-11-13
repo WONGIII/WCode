@@ -82,6 +82,7 @@ export async function runGenerateText(input: {
   runtime: AiSdkModelRuntime;
   statusSink?: ModelStatusSink;
   modelIoFullRetentionEnabled: boolean;
+  classify503AsContextExceeded: boolean;
 }): Promise<ModelTextResult> {
   // 重试预算档位：workflow actor 的请求带 unbounded，
   // 只放宽瞬态失败的放弃条件；状态事件里的 maxAttempts 以 0 表示无上限。
@@ -141,7 +142,9 @@ export async function runGenerateText(input: {
         ...admissionWaitPublishers(statusContext, attempt, statusPublishOptions(input)),
       });
     } catch (admitError) {
-      const admitFailure = classifyModelFailure(admitError, input.request.abortSignal);
+      const admitFailure = classifyModelFailure(admitError, input.request.abortSignal, {
+        classify503AsContextExceeded: input.classify503AsContextExceeded,
+      });
       await publishModelStatus(
         {
           ...statusContext,
@@ -368,7 +371,9 @@ export async function runGenerateText(input: {
       )
         throw error;
       const completedAt = Date.now();
-      const classified = classifyModelFailure(error, input.request.abortSignal);
+      const classified = classifyModelFailure(error, input.request.abortSignal, {
+        classify503AsContextExceeded: input.classify503AsContextExceeded,
+      });
       if (error instanceof RuntimeHeadersRefreshError) {
         classified.message = error.message;
         classified.retryable = error.retryable;
@@ -556,7 +561,9 @@ export async function runGenerateText(input: {
       try {
         await sleep(delayMs, input.request.abortSignal);
       } catch (sleepError) {
-        const sleepFailure = classifyModelFailure(sleepError, input.request.abortSignal);
+        const sleepFailure = classifyModelFailure(sleepError, input.request.abortSignal, {
+          classify503AsContextExceeded: input.classify503AsContextExceeded,
+        });
         const sleepResponseHeaders = sanitizeModelNetworkHeaders(
           getResponseHeaders(unwrapRetryError(sleepError)),
         );

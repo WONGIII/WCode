@@ -4008,6 +4008,9 @@ const enUS: Record<string, string> = {
   "settings.modelIoFullRetention": "Keep complete model I/O",
   "settings.modelIoFullRetentionDescription":
     "Keep complete model requests and responses without compression, size limits, or automatic deletion.",
+  "settings.classify503AsContextExceeded": "Treat 503 as context overflow",
+  "settings.classify503AsContextExceededDescription":
+    "When enabled, HTTP 503 responses containing context/exceed text are still treated as context overflow and trigger compaction. When disabled, they are treated as retryable server errors.",
   "settings.performanceMode": "Performance mode",
   "settings.performanceModeDescription": "Simplify rendered output to improve performance.",
   "settings.taskAutoArchive": "Auto-archive old sessions",

@@ -182,6 +182,8 @@ export interface ZCodeAppOptions {
   /** 新 Session 使用的 Environment 默认选择；仅在没有显式 runtime modelSelection 时参与初始化。 */
   configuredDefaultModelSelection?: ModelSelection;
   modelIoFullRetentionEnabled?: boolean;
+  /** 503 响应体命中 context/exceed 文案时是否仍归为 context_exceeded。 */
+  classify503AsContextExceeded?: boolean;
   /** 同进程嵌入宿主可注入完整的 borrowed 进程级 Owner；Endpoint 配置不得覆盖它。 */
   telemetryOwner?: AgentTelemetryRuntimeOwner;
   providerEndpointRoutingPort?: ProviderEndpointRoutingPort;
@@ -751,6 +753,7 @@ export interface ZCodeApp {
     traceId: TraceContext["traceId"];
   }>;
   setModelIoFullRetentionEnabled?(enabled: boolean): void;
+  setClassify503AsContextExceeded?(enabled: boolean): void;
   setModel(
     modelId: string | ModelSelection,
     options?: {

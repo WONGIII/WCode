@@ -771,6 +771,7 @@ export async function createZCodeApp(options: ZCodeAppOptions): Promise<ZCodeApp
         logger: modelLogger,
         modelIoDir,
         modelIoFullRetentionEnabled: options.modelIoFullRetentionEnabled,
+        classify503AsContextExceeded: options.classify503AsContextExceeded,
         executionConfig: modelExecutionConfig,
         statusSink: modelTelemetry.statusSink,
         streamIdleTimeoutMs: configResult.config.modelStream.idleTimeoutMs,
@@ -1357,6 +1358,8 @@ export async function createZCodeApp(options: ZCodeAppOptions): Promise<ZCodeApp
         mcpPort?.refreshWorkspaceTrustAdmission?.() ?? Promise.resolve(),
       setModelIoFullRetentionEnabled: (enabled) =>
         modelAdapter.setModelIoFullRetentionEnabled(enabled),
+      setClassify503AsContextExceeded: (enabled) =>
+        modelAdapter.setClassify503AsContextExceeded(enabled),
       readToolResultArtifact: (uri) =>
         artifactStore.readToolResultArtifact({ uri, trace: traceContext }),
       // wire/staging 全程是 decoded chunk；只有完整 checksum commit 后才在

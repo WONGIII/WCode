@@ -160,6 +160,7 @@ export function useSettings(options: { cacheKey?: string; services?: IServiceAcc
       if (
         typeof patch.askUserQuestionAutoResolutionEnabled === "boolean" ||
         typeof patch.modelIoFullRetentionEnabled === "boolean" ||
+        typeof patch.classify503AsContextExceeded === "boolean" ||
         typeof patch.pluginAutoRecommendationEnabled === "boolean"
       ) {
         const currentSettings = getSettingsSnapshot(cacheKey).settings;
@@ -173,6 +174,9 @@ export function useSettings(options: { cacheKey?: string; services?: IServiceAcc
           modelIoFullRetentionEnabled:
             patch.modelIoFullRetentionEnabled ??
             currentSettings?.modelIoFullRetentionEnabled === true,
+          classify503AsContextExceeded:
+            patch.classify503AsContextExceeded ??
+            currentSettings?.classify503AsContextExceeded !== false,
         };
         const syncResults = await Promise.allSettled([
           zcodeAgentService.syncAppRuntimePreferences(preferences),

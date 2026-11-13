@@ -568,6 +568,9 @@ const appSettingsObjectSchema = z.object({
   askUserQuestionAutoResolutionEnabled: z.boolean().default(true),
   pluginAutoRecommendationEnabled: z.boolean().default(false),
   modelIoFullRetentionEnabled: z.boolean().default(false),
+  // 503 响应体命中 context/exceed 文案时是否仍归为 context_exceeded。
+  // 默认开启以保持上游分类行为；关闭后 503 按可重试服务端错误处理。
+  classify503AsContextExceeded: z.boolean().default(true),
   dynamicWorkflowMode: dynamicWorkflowModeSettingSchema,
   enabledBuiltinAgentCliProviders: enabledBuiltinAgentCliProvidersSchema.default([
     ...ZCODE_ENABLED_AGENT_PROVIDERS,
@@ -666,6 +669,7 @@ export const appSettingsPatchSchema = z.object({
   askUserQuestionAutoResolutionEnabled: z.boolean().optional(),
   pluginAutoRecommendationEnabled: z.boolean().optional(),
   modelIoFullRetentionEnabled: z.boolean().optional(),
+  classify503AsContextExceeded: z.boolean().optional(),
   // 空串是「删除选择、回到跟随」的哨兵：RPC 会吞掉 undefined，normalizeSettingsPatch 把它归一成删除。
   dynamicWorkflowMode: z.union([z.enum(DYNAMIC_WORKFLOW_MODES), z.literal("")]).optional(),
   enabledBuiltinAgentCliProviders: enabledBuiltinAgentCliProvidersSchema.optional(),

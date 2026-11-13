@@ -163,6 +163,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     visibility: "all",
   },
   {
+    id: "settings.classify503AsContextExceeded",
+    section: "agentBehavior",
+    description: "settings.classify503AsContextExceededDescription",
+    visibility: "all",
+  },
+  {
     id: "settings.messageStreamShowReasoning",
     section: "agentBehavior",
     description: "settings.messageStreamShowReasoningDescription",

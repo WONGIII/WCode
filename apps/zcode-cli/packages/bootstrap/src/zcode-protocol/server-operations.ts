@@ -3974,6 +3974,8 @@ async function createRecord(
     traceContext,
     version: context.deps.version,
     modelIoFullRetentionEnabled: context.appRuntimePreferences.modelIoFullRetentionEnabled,
+    classify503AsContextExceeded:
+      context.appRuntimePreferences.classify503AsContextExceeded,
   });
   const now = Date.now();
   const record: ZCodeProtocolSessionRecord = {

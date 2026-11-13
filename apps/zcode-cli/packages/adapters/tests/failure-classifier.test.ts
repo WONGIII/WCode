@@ -71,6 +71,61 @@ describe("classifyModelFailure context length errors", () => {
     });
   });
 
+  it("keeps 503 context/exceed text as context exceeded by default", () => {
+    const error = new APICallError({
+      message: "Service Unavailable",
+      responseBody: JSON.stringify({
+        error: { message: "upstream context deadline exceeded" },
+      }),
+      statusCode: 503,
+    });
+
+    expect(classifyModelFailure(error)).toMatchObject({
+      code: "model_context_exceeded",
+      reason: "context_exceeded",
+      retryable: false,
+      statusCode: 503,
+    });
+  });
+
+  it("treats 503 as a retryable server error when the switch is off", () => {
+    const error = new APICallError({
+      message: "Service Unavailable",
+      responseBody: JSON.stringify({
+        error: { message: "upstream context deadline exceeded" },
+      }),
+      statusCode: 503,
+    });
+
+    expect(
+      classifyModelFailure(error, undefined, { classify503AsContextExceeded: false }),
+    ).toMatchObject({
+      code: "model_request_failed",
+      reason: "server_error",
+      retryable: true,
+      statusCode: 503,
+    });
+  });
+
+  it("does not let the 503 switch change 400 context overflow detection", () => {
+    const error = new APICallError({
+      message: "Bad Request",
+      responseBody: JSON.stringify({
+        error: { message: MAXIMUM_CONTEXT_LENGTH_ERROR },
+      }),
+      statusCode: 400,
+    });
+
+    expect(
+      classifyModelFailure(error, undefined, { classify503AsContextExceeded: false }),
+    ).toMatchObject({
+      code: "model_context_exceeded",
+      reason: "context_exceeded",
+      retryable: false,
+      statusCode: 400,
+    });
+  });
+
   it.each([
     "context_length_exceeded",
     "context_window_exceeded",

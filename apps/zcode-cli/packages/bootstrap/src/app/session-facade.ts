@@ -310,7 +310,6 @@ export function createSessionFacade(deps: CreateSessionFacadeDeps): SessionFacad
               deps.ownsExecutionPort && deps.executionPort.close
                 ? () => deps.executionPort.close?.()
                 : undefined,
-                : undefined,
             closeMcp: deps.ownsMcpPort && deps.mcpPort ? () => deps.mcpPort?.close() : undefined,
             closeNodeReplBrowserBroker: deps.closeNodeReplBrowserBroker,
             closeSessionStore: closableSessionStore

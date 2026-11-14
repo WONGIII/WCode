@@ -11,41 +11,45 @@ export interface ChatLoadingProps extends ComponentPropsWithoutRef<"div"> {
   size?: "default" | "sm";
 }
 
-// 球面密度独立于 Z 点阵，避免调整字形间距时意外改变球体；动画几何只生成一次。
-const ORB_Z_POINTS = [
+// 球面密度独立于 W 点阵，避免调整字形间距时意外改变球体；动画几何只生成一次。
+const ORB_W_POINTS = [
+  // 左外侧：左上 → 左下
   [3, 4],
-  [5, 4],
-  [7, 4],
-  [9, 4],
-  [13, 4],
-  [15, 4],
-  [17, 4],
-  [11, 6],
-  [13, 6],
-  [15, 6],
-  [9, 8],
-  [11, 8],
-  [13, 8],
-  [9, 10],
-  [11, 10],
-  [7, 12],
-  [9, 12],
-  [11, 12],
-  [5, 14],
-  [7, 14],
-  [9, 14],
-  [3, 16],
-  [5, 16],
+  [3.67, 6],
+  [4.33, 8],
+  [5, 10],
+  [5.67, 12],
+  [6.33, 14],
   [7, 16],
-  [11, 16],
+  // 左内侧：左下 → 中上
+  [7, 16],
+  [7.5, 14.33],
+  [8, 12.67],
+  [8.5, 11],
+  [9, 9.33],
+  [9.5, 7.67],
+  [10, 6],
+  // 右内侧：中上 → 右下
+  [10, 6],
+  [10.5, 7.67],
+  [11, 9.33],
+  [11.5, 11],
+  [12, 12.67],
+  [12.5, 14.33],
   [13, 16],
-  [15, 16],
-  [17, 16],
+  // 右外侧：右下 → 右上
+  [13, 16],
+  [13.67, 14],
+  [14.33, 12],
+  [15, 10],
+  [15.67, 8],
+  [16.33, 6],
+  [17, 4],
 ] as const;
 const ORB_POINT_COUNT = 105;
-const ORB_Z_TARGETS = new Map(
-  ORB_Z_POINTS.map((point, index) => [
-    Math.floor((index * ORB_POINT_COUNT) / ORB_Z_POINTS.length),
+const ORB_W_TARGETS = new Map(
+  ORB_W_POINTS.map((point, index) => [
+    Math.floor((index * ORB_POINT_COUNT) / ORB_W_POINTS.length),
     point,
   ]),
 );
@@ -72,7 +76,7 @@ export function ChatLoadingOrbs() {
     };
     const frame = (now: number) => {
       const elapsed = (now - startedAt) % 8240;
-      // 只延长纯球体阶段，保留原有变形速度与 Z 停留时间。
+      // 只延长纯球体阶段，保留原有变形速度与 W 停留时间。
       const morph =
         elapsed < 5000
           ? 0
@@ -88,7 +92,7 @@ export function ChatLoadingOrbs() {
       const sin = Math.sin(angle);
       dots.forEach((dot, index) => {
         const sphere = ORB_SPHERE[index];
-        const target = ORB_Z_TARGETS.get(index);
+        const target = ORB_W_TARGETS.get(index);
         if (!sphere) return;
         const [sx, sy, sz] = sphere;
         const orbX = 10 + 8.5 * (sx * cos + sz * sin);
@@ -118,7 +122,7 @@ export function ChatLoadingOrbs() {
       window.cancelAnimationFrame(frameId);
       if (reducedMotion.matches) {
         dots.forEach((dot, index) => {
-          const target = ORB_Z_TARGETS.get(index);
+          const target = ORB_W_TARGETS.get(index);
           const [x, y] = target ?? [10, 10];
           setDot(dot, x, y, 0.5, target ? 1 : 0);
         });
@@ -148,7 +152,7 @@ export function ChatLoadingOrbs() {
         }}
       >
         {ORB_SPHERE.map((_, index) => {
-          const target = ORB_Z_TARGETS.get(index);
+          const target = ORB_W_TARGETS.get(index);
           return (
             <circle
               key={index}

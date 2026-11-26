@@ -43,6 +43,7 @@ import type {
   ScriptWorkflowRunRecord,
   ScriptWorkflowRunStatus,
   ScriptWorkflowStorePort,
+  SessionDeletionInspectOptions,
   SessionGoal,
   SessionId,
   SessionInfo,
@@ -321,14 +322,27 @@ export class SqliteSessionStore
       .prepare("delete from session_runtime_presence where session_id=? and owner_id=?")
       .run(id, this.runtimeOwnerId);
   }
-  async inspectSessionDeletion(id: SessionId) {
-    return sessionRepository.inspectSessionDeletion(this.db, id, this.runtimeOwnerId);
+  async inspectSessionDeletion(id: SessionId, options?: SessionDeletionInspectOptions) {
+    return sessionRepository.inspectSessionDeletion(this.db, id, this.runtimeOwnerId, options);
+  }
+  async inspectSessionDeletions(
+    targets: ReadonlyArray<{ sessionId: SessionId } & SessionDeletionInspectOptions>,
+  ) {
+    return sessionRepository.inspectSessionDeletions(
+      this.db,
+      targets.map(({ sessionId, scanArtifactReferences }) => ({
+        root: sessionId,
+        scanArtifactReferences,
+      })),
+      this.runtimeOwnerId,
+    );
   }
   async beginSessionDeletion(
     id: SessionId,
     revision: string,
     operationId: string,
     retained: Array<{ sessionId: SessionId; artifactId: string }>,
+    options?: SessionDeletionInspectOptions,
   ): Promise<void> {
     sessionRepository.beginSessionDeletion(
       this.db,
@@ -337,6 +351,7 @@ export class SqliteSessionStore
       revision,
       operationId,
       retained,
+      options,
     );
   }
   async completeSessionDeletion(id: SessionId): Promise<void> {
@@ -782,7 +797,7 @@ export class SqliteSessionStore
     return messageRepository.messageWithParts(this.db, input);
   }
 
-  async messages(input: { sessionID: SessionId }): Promise<MessageWithParts[]> {
+  async messages(input: Parameters<SessionStorePort["messages"]>[0]): Promise<MessageWithParts[]> {
     return messageRepository.messages(this.db, input);
   }
 

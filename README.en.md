@@ -43,9 +43,14 @@ This is a public community fork; upstream is [zai-org/ZCode](https://github.com/
 
 ## Updates
 
+- **2026-11-26**: Merged upstream ZCode v4.0.0; version bumped to `4.0.0-wcode.1`.
 - **2026-11-13**: Merged upstream ZCode v3.18.2; version bumped to `3.18.2-wcode.1`.
 - **2026-11-04**: Renamed the repository to WCode, made it public, and switched the default branch to `main`; added the Codex effort slider, context source breakdown, and dark empty-state mark.
 - **2026-11-03**: Created the WCode branch based on ZCode v3.17.1.
+- 2026-11-23: Upstream updated to ZCode v4.0.0.
+- 2026-11-12: Upstream updated to ZCode v3.18.2.
+- 2026-11-12: Upstream updated to ZCode v3.18.1.
+- 2026-11-11: Upstream updated to ZCode v3.18.0.
 - 2026-11-03: Upstream updated to ZCode v3.17.2.
 - 2026-10-30: Upstream updated to ZCode v3.17.1.
 - 2026-10-29: Upstream updated to ZCode v3.17.0.
